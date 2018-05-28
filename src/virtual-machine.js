@@ -20,6 +20,8 @@ const {loadSound} = require('./import/load-sound.js');
 const {serializeSounds, serializeCostumes} = require('./serialization/serialize-assets');
 require('canvas-toBlob');
 
+const VideoTarget = require('./video/video-target.js');
+
 const RESERVED_NAMES = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
 
 const CORE_EXTENSIONS = [
@@ -1060,6 +1062,16 @@ class VirtualMachine extends EventEmitter {
         } else {
             this.editingTarget.postSpriteInfo(data);
         }
+    }
+
+    createVideoTarget (id, videoInfo) {
+        var target = new VideoTarget(this.runtime, id, videoInfo);
+        this.runtime.targets.push(target);
+        this.setEditingTarget(target.id);
+    }
+
+    getVideoTargets () {
+        return this.runtime.targets.filter(t => (t instanceof VideoTarget));
     }
 }
 

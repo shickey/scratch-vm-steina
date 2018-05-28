@@ -2,6 +2,7 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 const log = require('../../util/log');
+const VideoTarget = require('../../video/video-target.js');
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -58,81 +59,81 @@ class SteinaVideoBlocks {
                         description: 'starts the video playing without blocking the thread'
                     })
                 },
-                {
-                    opcode: 'rotateRightBy',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'video.rotateRightBy',
-                        default: 'rotate right [VALUE] degrees',
-                        description: 'rotates the video clockwise the specified number of degrees'
-                    }),
-                    arguments: {
-                        VALUE: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 5
-                        }
-                    }
-                },
-                {
-                    opcode: 'rotateLeftBy',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'video.rotateLeftBy',
-                        default: 'rotate left [VALUE] degrees',
-                        description: 'rotates the video counterclockwise the specified number of degrees'
-                    }),
-                    arguments: {
-                        VALUE: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 5
-                        }
-                    }
-                },
-                {
-                    opcode: 'setRotation',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'video.setRotation',
-                        default: 'set rotation to [VALUE] degrees',
-                        description: 'sets the rotation angle on the current video'
-                    }),
-                    arguments: {
-                        VALUE: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 0
-                        }
-                    }
-                },
-                {
-                    opcode: 'changeSizeBy',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'video.changeSizeBy',
-                        default: 'change size by [VALUE]',
-                        description: 'changes the size percentage of the current video by the specified units'
-                    }),
-                    arguments: {
-                        VALUE: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 10
-                        }
-                    }
-                },
-                {
-                    opcode: 'setSize',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'video.setSize',
-                        default: 'set size to [VALUE] %',
-                        description: 'sets the size of the current video'
-                    }),
-                    arguments: {
-                        VALUE: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 100
-                        }
-                    }
-                },
+                // {
+                //     opcode: 'rotateRightBy',
+                //     blockType: BlockType.COMMAND,
+                //     text: formatMessage({
+                //         id: 'video.rotateRightBy',
+                //         default: 'rotate right [VALUE] degrees',
+                //         description: 'rotates the video clockwise the specified number of degrees'
+                //     }),
+                //     arguments: {
+                //         VALUE: {
+                //             type: ArgumentType.NUMBER,
+                //             defaultValue: 5
+                //         }
+                //     }
+                // },
+                // {
+                //     opcode: 'rotateLeftBy',
+                //     blockType: BlockType.COMMAND,
+                //     text: formatMessage({
+                //         id: 'video.rotateLeftBy',
+                //         default: 'rotate left [VALUE] degrees',
+                //         description: 'rotates the video counterclockwise the specified number of degrees'
+                //     }),
+                //     arguments: {
+                //         VALUE: {
+                //             type: ArgumentType.NUMBER,
+                //             defaultValue: 5
+                //         }
+                //     }
+                // },
+                // {
+                //     opcode: 'setRotation',
+                //     blockType: BlockType.COMMAND,
+                //     text: formatMessage({
+                //         id: 'video.setRotation',
+                //         default: 'set rotation to [VALUE] degrees',
+                //         description: 'sets the rotation angle on the current video'
+                //     }),
+                //     arguments: {
+                //         VALUE: {
+                //             type: ArgumentType.NUMBER,
+                //             defaultValue: 0
+                //         }
+                //     }
+                // },
+                // {
+                //     opcode: 'changeSizeBy',
+                //     blockType: BlockType.COMMAND,
+                //     text: formatMessage({
+                //         id: 'video.changeSizeBy',
+                //         default: 'change size by [VALUE]',
+                //         description: 'changes the size percentage of the current video by the specified units'
+                //     }),
+                //     arguments: {
+                //         VALUE: {
+                //             type: ArgumentType.NUMBER,
+                //             defaultValue: 10
+                //         }
+                //     }
+                // },
+                // {
+                //     opcode: 'setSize',
+                //     blockType: BlockType.COMMAND,
+                //     text: formatMessage({
+                //         id: 'video.setSize',
+                //         default: 'set size to [VALUE] %',
+                //         description: 'sets the size of the current video'
+                //     }),
+                //     arguments: {
+                //         VALUE: {
+                //             type: ArgumentType.NUMBER,
+                //             defaultValue: 100
+                //         }
+                //     }
+                // },
                 {
                     opcode: 'changeEffectBy',
                     blockType: BlockType.COMMAND,
@@ -222,38 +223,51 @@ class SteinaVideoBlocks {
         };
     }
 
-    playUntilDone() {
-        console.log('playUntilDone');
+    playUntilDone(args, util) {
+        var target = util.target;
+
+        if (target.waitForNextTick) { util.yield(); return; }
+
+        if (target.fps * target.currentTime >= target.frames) {
+            // We've reached the end
+            target.currentTime = target.frames / target.fps;
+            return;
+        }
+        else {
+            target.currentTime += (util.runtime.currentStepTime / 1000.0);
+            target.waitForNextTick = true;
+            util.yield();
+        }
     }
 
     start() {
         console.log('startVideo');
     }
 
-    rotateRightBy(args) {
-        console.log('rotateRightBy');
-        console.log(args);
-    }
+    // rotateRightBy(args) {
+    //     console.log('rotateRightBy');
+    //     console.log(args);
+    // }
 
-    rotateLeftBy(args) {
-        console.log('rotateLeftBy');
-        console.log(args);
-    }
+    // rotateLeftBy(args) {
+    //     console.log('rotateLeftBy');
+    //     console.log(args);
+    // }
 
-    setRotation(args) {
-        console.log('setRotation');
-        console.log(args);
-    }
+    // setRotation(args) {
+    //     console.log('setRotation');
+    //     console.log(args);
+    // }
 
-    changeSizeBy(args) {
-        console.log('changeSizeBy');
-        console.log(args);
-    }
+    // changeSizeBy(args) {
+    //     console.log('changeSizeBy');
+    //     console.log(args);
+    // }
 
-    setSize(args) {
-        console.log('setSize');
-        console.log(args);
-    }
+    // setSize(args) {
+    //     console.log('setSize');
+    //     console.log(args);
+    // }
 
     changeEffectBy(args) {
         console.log('changeEffectBy');

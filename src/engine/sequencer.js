@@ -66,8 +66,11 @@ class Sequencer {
      * @return {Array.<!Thread>} List of inactive threads after stepping.
      */
     stepThreads () {
-        // Work time is 75% of the thread stepping interval.
-        const WORK_TIME = 0.75 * this.runtime.currentStepTime;
+        // @NOTE (sean): We redefine the work time to be only 1/3 of the step
+        //               time which at 30 FPS is ~11ms
+        // // Work time is 75% of the thread stepping interval.
+        // const WORK_TIME = 0.75 * this.runtime.currentStepTime;
+        const WORK_TIME = 0.33 * this.runtime.currentStepTime;
         // Start counting toward WORK_TIME.
         this.timer.start();
         // Count of active threads.
