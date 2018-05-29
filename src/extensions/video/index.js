@@ -3,7 +3,8 @@ const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 const log = require('../../util/log');
 const VideoTarget = require('../../video/video-target.js');
-const Thread = require('../../engine/thread.js')
+const Thread = require('../../engine/thread.js');
+const MathUtil = require('../../util/math-util.js');
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -48,93 +49,78 @@ class SteinaVideoBlocks {
                     text: formatMessage({
                         id: 'video.playUntilDone',
                         default: 'play video until done',
-                        description: 'plays the video from beginning to end while blocking the thread'
+                        description: 'plays the video at the current rate while blocking the thread ' +
+                                     'until reaching the end (or beginning if the rate is negative)'
                     })
                 },
                 {
-                    opcode: 'start',
+                    opcode: 'setPlayRate',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.start',
-                        default: 'start video',
-                        description: 'starts the video playing without blocking the thread'
-                    })
+                        id: 'video.setPlayRate',
+                        default: 'set play rate to [RATE] %',
+                        description: 'sets the playback rate of the video as a percentage'
+                    }),
+                    arguments: {
+                        RATE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 100
+                        }
+                    }
+                },
+                {
+                    opcode: 'goToFrame',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.goToFrame',
+                        default: 'go to video frame [FRAME]',
+                        description: 'sets the current video frame'
+                    }),
+                    arguments: {
+                        FRAME: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        }
+                    }
                 },
                 // {
-                //     opcode: 'rotateRightBy',
+                //     opcode: 'playFromTo',
                 //     blockType: BlockType.COMMAND,
                 //     text: formatMessage({
-                //         id: 'video.rotateRightBy',
-                //         default: 'rotate right [VALUE] degrees',
-                //         description: 'rotates the video clockwise the specified number of degrees'
+                //         id: 'video.playFromTo',
+                //         default: 'play from frame [FROM] to frame [TO]',
+                //         description: 'plays from one frame to another at the current playback, taking ' +
+                //                      'into account playback direction and rate direction'
                 //     }),
                 //     arguments: {
-                //         VALUE: {
-                //             type: ArgumentType.NUMBER,
-                //             defaultValue: 5
-                //         }
-                //     }
-                // },
-                // {
-                //     opcode: 'rotateLeftBy',
-                //     blockType: BlockType.COMMAND,
-                //     text: formatMessage({
-                //         id: 'video.rotateLeftBy',
-                //         default: 'rotate left [VALUE] degrees',
-                //         description: 'rotates the video counterclockwise the specified number of degrees'
-                //     }),
-                //     arguments: {
-                //         VALUE: {
-                //             type: ArgumentType.NUMBER,
-                //             defaultValue: 5
-                //         }
-                //     }
-                // },
-                // {
-                //     opcode: 'setRotation',
-                //     blockType: BlockType.COMMAND,
-                //     text: formatMessage({
-                //         id: 'video.setRotation',
-                //         default: 'set rotation to [VALUE] degrees',
-                //         description: 'sets the rotation angle on the current video'
-                //     }),
-                //     arguments: {
-                //         VALUE: {
+                //         FROM: {
                 //             type: ArgumentType.NUMBER,
                 //             defaultValue: 0
-                //         }
-                //     }
-                // },
-                // {
-                //     opcode: 'changeSizeBy',
-                //     blockType: BlockType.COMMAND,
-                //     text: formatMessage({
-                //         id: 'video.changeSizeBy',
-                //         default: 'change size by [VALUE]',
-                //         description: 'changes the size percentage of the current video by the specified units'
-                //     }),
-                //     arguments: {
-                //         VALUE: {
+                //         },
+                //         TO: {
                 //             type: ArgumentType.NUMBER,
-                //             defaultValue: 10
-                //         }
+                //             defaultValue: 300 // @TODO: How do we automatically set this to the final frame number?
+                //         },
                 //     }
                 // },
-                // {
-                //     opcode: 'setSize',
-                //     blockType: BlockType.COMMAND,
-                //     text: formatMessage({
-                //         id: 'video.setSize',
-                //         default: 'set size to [VALUE] %',
-                //         description: 'sets the size of the current video'
-                //     }),
-                //     arguments: {
-                //         VALUE: {
-                //             type: ArgumentType.NUMBER,
-                //             defaultValue: 100
-                //         }
-                //     }
-                // },
+                {
+                    opcode: 'nextFrame',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.nextFrame',
+                        default: 'go to next frame',
+                        description: 'increments the current video frame'
+                    })
+                },
+                {
+                    opcode: 'previousFrame',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.previousFrame',
+                        default: 'go to previous frame',
+                        description: 'decrements the current video frame'
+                    })
+                },
                 {
                     opcode: 'changeEffectBy',
                     blockType: BlockType.COMMAND,
@@ -227,46 +213,67 @@ class SteinaVideoBlocks {
     playUntilDone(args, util) {
         var target = util.target;
         var thread = util.thread;
-
-        if (target.fps * target.currentTime >= target.frames) {
-            // We've reached the end
-            target.currentTime = target.frames / target.fps;
-            return;
+        if (util.stackFrame.playing) {
+            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
+            var nextFrame = target.currentFrame + frameIncrement;
+            if (nextFrame < 0) {
+                target.setCurrentFrame(0);
+                util.stackFrame.playing = false;
+                return;
+            }
+            else if (nextFrame > target.frames) {
+                target.setCurrentFrame(target.frames);
+                util.stackFrame.playing = false;
+                return;
+            }
+            target.setCurrentFrame(nextFrame);
+            thread.status = Thread.STATUS_YIELD_TICK;
         }
-        
-        // Bump the currentTime by the frame dt multiplied by the playback rate
-        target.currentTime += ((util.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0));
-        thread.status = Thread.STATUS_YIELD_TICK;
+        else {
+            util.stackFrame.playing = true;
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
     }
 
-    start() {
-        console.log('startVideo');
+    setPlayRate(args, util) {
+        util.target.setRate(args.RATE);
     }
 
-    // rotateRightBy(args) {
-    //     console.log('rotateRightBy');
-    //     console.log(args);
+    goToFrame(args, util) {
+        util.target.setCurrentFrame(args.FRAME);
+    }
+
+    // playFromTo(args, util) {
+    //     var target = util.target;
+    //     if (util.stackFrame.playing) {
+    //         var from = util.stackFrame.from;
+    //         var to = util.stackFrame.to;
+    //         var currentFrame = target.currentFrame;
+    //         var rate = target.playbackRate;
+    //         // Make sure the rate 
+    //         if ((from > to && rate > 0) || (to < from && rate < 0)) {
+    //             rate *= -1.0
+    //         }
+    //     }
+    //     else {
+    //         util.stackFrame.from = MathUtil.clamp(args.FROM, 0, target.frames);
+    //         util.stackFrame.to = MathUtil.clamp(args.TO, 0, target.frames);
+
+    //         util.stackFrame.playing = true;
+    //         target.setCurrentFrame(util.stackFrame.from);
+    //         thread.status = Thread.STATUS_YIELD_TICK;
+    //     }
     // }
 
-    // rotateLeftBy(args) {
-    //     console.log('rotateLeftBy');
-    //     console.log(args);
-    // }
+    nextFrame(args, util) {
+        var target = util.target;
+        target.setCurrentFrame(target.currentFrame + 1);
+    }
 
-    // setRotation(args) {
-    //     console.log('setRotation');
-    //     console.log(args);
-    // }
-
-    // changeSizeBy(args) {
-    //     console.log('changeSizeBy');
-    //     console.log(args);
-    // }
-
-    // setSize(args) {
-    //     console.log('setSize');
-    //     console.log(args);
-    // }
+    previousFrame(args, util) {
+        var target = util.target;
+        target.setCurrentFrame(target.currentFrame - 1);
+    }
 
     changeEffectBy(args) {
         console.log('changeEffectBy');

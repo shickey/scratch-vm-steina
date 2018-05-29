@@ -27,7 +27,7 @@ class VideoTarget extends Target {
     // Video specific variables
     this.fps = videoInfo.fps || 30.0;
     this.frames = videoInfo.frames || 0;
-    this.currentTime = 0.0;
+    this.currentFrame = 0;
     this.playbackRate = 100;
   }
 
@@ -52,11 +52,11 @@ class VideoTarget extends Target {
   // Video functions
   setRate (rate) {
     // @TODO: Should we clamp this or is it fun to just go nuts with the rate?
-    this.rate = Math.Util.clamp(rate, -500, 500);
+    this.playbackRate = MathUtil.clamp(rate, -1000, 1000);
   }
 
-  setCurrentTime (time) {
-    this.currentTime = MathUtil.clamp(time, 0.0, this.frames / this.fps);
+  setCurrentFrame (frame) {
+    this.currentFrame = MathUtil.clamp(frame, 0, this.frames);
   }
 
   toJSON () {
@@ -73,7 +73,7 @@ class VideoTarget extends Target {
 
       fps: this.fps,
       frames: this.frames,
-      currentTime: this.currentTime,
+      currentFrame: this.currentFrame,
       playbackRate: this.playbackRate
     }
   }
