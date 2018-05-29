@@ -25,7 +25,6 @@ class VideoTarget extends Target {
     this.size = 100;
 
     // Video specific variables
-    this.waitForNextTick = false;
     this.fps = videoInfo.fps || 30.0;
     this.frames = videoInfo.frames || 0;
     this.currentTime = 0.0;

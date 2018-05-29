@@ -92,7 +92,6 @@ class Sequencer {
                 }
                 this.runtime.profiler.start(stepThreadsInnerProfilerId);
             }
-
             numActiveThreads = 0;
             // Attempt to run each thread one time.
             for (let i = 0; i < this.runtime.threads.length; i++) {
@@ -223,6 +222,11 @@ class Sequencer {
                 // A promise was returned by the primitive. Yield the thread
                 // until the promise resolves. Promise resolution should reset
                 // thread.status to Thread.STATUS_RUNNING.
+                return;
+            } else if (thread.status === Thread.STATUS_YIELD_TICK) {
+                // We return here so that the thread won't be marked
+                // as STATUS_DONE below and will remain as STATUS_YIELD_TICK
+                // until reset to STATUS_RUNNING by the next tick
                 return;
             }
             // If no control flow has happened, switch to next block.

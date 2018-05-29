@@ -3,6 +3,7 @@ const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 const log = require('../../util/log');
 const VideoTarget = require('../../video/video-target.js');
+const Thread = require('../../engine/thread.js')
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -225,19 +226,17 @@ class SteinaVideoBlocks {
 
     playUntilDone(args, util) {
         var target = util.target;
-
-        if (target.waitForNextTick) { util.yield(); return; }
+        var thread = util.thread;
 
         if (target.fps * target.currentTime >= target.frames) {
             // We've reached the end
             target.currentTime = target.frames / target.fps;
             return;
         }
-        else {
-            target.currentTime += (util.runtime.currentStepTime / 1000.0);
-            target.waitForNextTick = true;
-            util.yield();
-        }
+        
+        // Bump the currentTime by the frame dt multiplied by the playback rate
+        target.currentTime += ((util.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0));
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     start() {
