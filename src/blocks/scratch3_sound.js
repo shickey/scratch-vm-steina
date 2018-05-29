@@ -248,7 +248,7 @@ class Scratch3SoundBlocks {
             if (!soundState.effects.hasOwnProperty(effect)) continue;
             soundState.effects[effect] = 0;
         }
-        if (target.audioPlayer === null) return;
+        if (!target.audioPlayer) return;
         target.audioPlayer.clearEffects();
     }
 
