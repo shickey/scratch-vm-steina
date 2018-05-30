@@ -21,6 +21,7 @@ const {serializeSounds, serializeCostumes} = require('./serialization/serialize-
 require('canvas-toBlob');
 
 const VideoTarget = require('./video/video-target.js');
+const Clone = require('./util/clone.js');
 
 const RESERVED_NAMES = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
 
@@ -1066,7 +1067,14 @@ class VirtualMachine extends EventEmitter {
 
     createVideoTarget (id, videoInfo) {
         var target = new VideoTarget(this.runtime, id, videoInfo);
+        if (videoInfo.blocksJson) {
+            var blocks = JSON.parse(videoInfo.blocksJson);
+            target.blocks._blocks = Clone.simple(blocks._blocks);
+            target.blocks._scripts = Clone.simple(blocks._scripts);
+        }
         this.runtime.targets.push(target);
+        this.emitTargetsUpdate();
+        this.emitWorkspaceUpdate();
         this.setEditingTarget(target.id);
     }
 

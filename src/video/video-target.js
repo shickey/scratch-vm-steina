@@ -67,7 +67,7 @@ class VideoTarget extends Target {
       size: this.size,
       direction: this.direction,
       visible: this.visible,
-      blocks: this.blocks._blocks,
+      blocks: JSON.stringify(this.blocks),
       variables: this.variables,
       lists: this.lists,
 
