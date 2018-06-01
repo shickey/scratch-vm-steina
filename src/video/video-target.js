@@ -1,3 +1,4 @@
+const log = require('../util/log');
 const Target = require('../engine/target');
 const MathUtil = require('../util/math-util');
 
@@ -11,6 +12,18 @@ class VideoTarget extends Target {
 
   constructor(runtime, id, videoInfo) {
     super(runtime, null);
+
+    // We get a little ribald here and add a new data structure
+    // to the runtime to keep track of VideoTarget draw order.
+    // The standard Scratch renderer keeps track of draw order
+    // itself, but since we're adopting the model that the VM
+    // holds all ground truth for the state of entities, we're
+    // storing the draw order in the VM directly.
+    runtime.videoTargetDrawInfo = runtime.videoTargetDrawInfo || {
+      order : [] // Array of target ids
+    }
+
+    this.drawInfo = runtime.videoTargetDrawInfo;
 
     // Overwrite the id to match the id in Core Data
     if (id) {
@@ -47,6 +60,58 @@ class VideoTarget extends Target {
   
   setSize (size) {
     this.size = MathUtil.clamp(size, 1, 500);
+  }
+
+  goToFront () {
+    var order = this.drawInfo.order;
+    var index = order.indexOf(this.id);
+    if (index === -1) {
+      log.warn(`Unable to find video target id ${this.id} in drawing order array`);
+      return;
+    }
+    order.splice(index, 1);
+    order.push(this.id);
+  }
+
+  goToBack () {
+    var order = this.drawInfo.order;
+    var index = order.indexOf(this.id);
+    if (index === -1) {
+      log.warn(`Unable to find video target id ${this.id} in drawing order array`);
+      return;
+    }
+    order.splice(index, 1);
+    order.unshift(this.id);
+  }
+
+  goForwardLayers (nLayers) {
+    var order = this.drawInfo.order;
+    var index = order.indexOf(this.id);
+    if (index === -1) {
+      log.warn(`Unable to find video target id ${this.id} in drawing order array`);
+      return;
+    }
+    order.splice(index, 1);
+    index += nLayers;
+    if (index >= order.length) {
+      index = order.length;
+    }
+    order.splice(index, 0, this.id);
+  }
+
+  goBackwardLayers (nLayers) {
+    var order = this.drawInfo.order;
+    var index = order.indexOf(this.id);
+    if (index === -1) {
+      log.warn(`Unable to find video target id ${this.id} in drawing order array`);
+      return;
+    }
+    order.splice(index, 1);
+    index -= nLayers;
+    if (index < 0) {
+      index = 0;
+    }
+    order.splice(index, 0, this.id);
   }
 
   // Video functions

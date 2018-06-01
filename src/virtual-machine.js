@@ -1073,13 +1073,17 @@ class VirtualMachine extends EventEmitter {
             target.blocks._scripts = Clone.simple(blocks._scripts);
         }
         this.runtime.targets.push(target);
+        this.runtime.videoTargetDrawInfo.order.push(target.id);
         this.emitTargetsUpdate();
         this.emitWorkspaceUpdate();
         this.setEditingTarget(target.id);
     }
 
     getVideoTargets () {
-        return this.runtime.targets.filter(t => (t instanceof VideoTarget));
+        var order = this.runtime.videoTargetDrawInfo.order;
+        return this.runtime.targets.filter(t => (t instanceof VideoTarget)).sort( (a, b) => {
+            return order.indexOf(a.id) - order.indexOf(b.id);
+        });
     }
 }
 
