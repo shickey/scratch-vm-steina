@@ -1065,6 +1065,9 @@ class VirtualMachine extends EventEmitter {
         }
     }
 
+    
+    // Steina Extensions
+
     createVideoTarget (id, videoInfo) {
         var target = new VideoTarget(this.runtime, id, videoInfo);
         if (videoInfo.blocksJson) {
@@ -1084,6 +1087,11 @@ class VirtualMachine extends EventEmitter {
         return this.runtime.targets.filter(t => (t instanceof VideoTarget)).sort( (a, b) => {
             return order.indexOf(a.id) - order.indexOf(b.id);
         });
+    }
+
+    updateDrag(dragInfo) {
+        if (!this._dragTarget) return;
+        this._dragTarget.setXY(dragInfo.x, dragInfo.y, true);
     }
 }
 

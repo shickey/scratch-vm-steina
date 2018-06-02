@@ -31,6 +31,7 @@ class VideoTarget extends Target {
     }
 
     // Variables from RenderedTarget
+    this.dragging = false;
     this.x = 0;
     this.y = 0;
     this.direction = 90;
@@ -46,6 +47,7 @@ class VideoTarget extends Target {
 
   // Functions from RenderedTarget
   setXY (x, y, force) {
+    if (this.dragging && !force) return;
     this.x = x;
     this.y = y;
   }
@@ -114,6 +116,15 @@ class VideoTarget extends Target {
     order.splice(index, 0, this.id);
   }
 
+  startDrag() {
+    this.dragging = true;
+  }
+
+  stopDrag() {
+    this.dragging = false;
+  }
+  
+
   // Video functions
   setRate (rate) {
     // @TODO: Should we clamp this or is it fun to just go nuts with the rate?
@@ -127,6 +138,7 @@ class VideoTarget extends Target {
   toJSON () {
     return {
       id: this.id,
+      dragging: this.dragging,
       x: this.x,
       y: this.y,
       size: this.size,
