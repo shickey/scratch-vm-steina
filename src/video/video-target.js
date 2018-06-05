@@ -45,18 +45,22 @@ class VideoTarget extends Target {
     if (this.dragging && !force) return;
     this.x = x;
     this.y = y;
+    this.runtime.requestRedraw();
   }
 
   setDirection (direction) {
     this.direction = MathUtil.wrapClamp(direction, -179, 180);
+    this.runtime.requestRedraw();
   }
 
   setVisible (visible) {
     this.visible = !!visible;
+    this.runtime.requestRedraw();
   }
   
   setSize (size) {
     this.size = MathUtil.clamp(size, 1, 500);
+    this.runtime.requestRedraw();
   }
 
   goToFront () {
@@ -124,10 +128,12 @@ class VideoTarget extends Target {
   setRate (rate) {
     // @TODO: Should we clamp this or is it fun to just go nuts with the rate?
     this.playbackRate = MathUtil.clamp(rate, -1000, 1000);
+    this.runtime.requestRedraw();
   }
 
   setCurrentFrame (frame) {
     this.currentFrame = MathUtil.clamp(frame, 0, this.frames);
+    this.runtime.requestRedraw();
   }
 
   toJSON () {
