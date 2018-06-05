@@ -1036,6 +1036,8 @@ class VirtualMachine extends EventEmitter {
         if (target) {
             this._dragTarget = target;
             target.startDrag();
+            this.setEditingTarget(target.sprite && target.sprite.clones[0] ?
+                target.sprite.clones[0].id : target.id);
         }
     }
 
@@ -1048,8 +1050,6 @@ class VirtualMachine extends EventEmitter {
         if (target) {
             this._dragTarget = null;
             target.stopDrag();
-            this.setEditingTarget(target.sprite && target.sprite.clones[0] ?
-                target.sprite.clones[0].id : target.id);
         }
     }
 
@@ -1085,12 +1085,14 @@ class VirtualMachine extends EventEmitter {
             }
             target[key] = inflated[key];
         }
-        this.insertVideoTarget(target);
+        this.insertVideoTarget(target, false);
     }
 
-    insertVideoTarget (target) {
+    insertVideoTarget (target, addToOrder = true) {
         this.runtime.targets.push(target);
-        this.runtime.videoTargetDrawInfo.order.push(target.id);
+        if (addToOrder) {
+            this.runtime.videoTargetDrawInfo.order.push(target.id);
+        }
         this.emitTargetsUpdate();
         this.emitWorkspaceUpdate();
         this.setEditingTarget(target.id);
