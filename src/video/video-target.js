@@ -13,18 +13,6 @@ class VideoTarget extends Target {
   constructor(runtime, id, videoInfo) {
     super(runtime, null);
 
-    // We get a little ribald here and add a new data structure
-    // to the runtime to keep track of VideoTarget draw order.
-    // The standard Scratch renderer keeps track of draw order
-    // itself, but since we're adopting the model that the VM
-    // holds all ground truth for the state of entities, we're
-    // storing the draw order in the VM directly.
-    runtime.videoTargetDrawInfo = runtime.videoTargetDrawInfo || {
-      order : [] // Array of target ids
-    }
-
-    this.drawInfo = runtime.videoTargetDrawInfo;
-
     // Overwrite the id to match the id in Core Data
     if (id) {
       this.id = id;
@@ -39,10 +27,17 @@ class VideoTarget extends Target {
     this.size = 100;
 
     // Video specific variables
-    this.fps = videoInfo.fps || 30.0;
-    this.frames = videoInfo.frames || 0;
+    this.fps = 30.0;
+    this.frames = 0;
     this.currentFrame = 0;
     this.playbackRate = 100;
+
+    this.drawInfo = runtime.videoTargetDrawInfo;
+
+    if (!!videoInfo) {
+      this.fps = videoInfo.fps;
+      this.frames = videoInfo.frames;
+    }
   }
 
   // Functions from RenderedTarget
@@ -138,13 +133,15 @@ class VideoTarget extends Target {
   toJSON () {
     return {
       id: this.id,
-      dragging: this.dragging,
       x: this.x,
       y: this.y,
       size: this.size,
       direction: this.direction,
       visible: this.visible,
-      blocks: JSON.stringify(this.blocks),
+      blocks: {
+        _blocks: this.blocks._blocks,
+        _scripts: this.blocks._scripts,
+      },
       variables: this.variables,
       lists: this.lists,
 

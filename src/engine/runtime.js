@@ -259,6 +259,18 @@ class Runtime extends EventEmitter {
          * @type {Profiler}
          */
         this.profiler = null;
+
+        // @NOTE (sean):
+        // We get a little ribald here and add a new data structure
+        // to the runtime to keep track of VideoTarget draw order.
+        // The standard Scratch renderer keeps track of draw order
+        // itself, but since we're adopting the model that the VM
+        // holds all ground truth for the state of entities, we're
+        // storing the draw order in the VM directly.
+        this.videoTargetDrawInfo = {
+          order : [] // Array of target ids
+        };
+
     }
 
     /**
