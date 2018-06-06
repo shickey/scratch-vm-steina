@@ -27,6 +27,12 @@ class VideoTarget extends Target {
     this.direction = 90;
     this.visible = true;
     this.size = 100;
+    this.effects = {
+      color: 0,
+      whirl: 0,
+      brightness: 0,
+      ghost: 0
+    };
 
     // Video specific variables
     this.tapped = false;
@@ -132,6 +138,20 @@ class VideoTarget extends Target {
   stopDrag() {
     this.dragging = false;
   }
+
+  setEffect(effectName, value) {
+    if (!this.effects.hasOwnProperty(effectName)) return;
+    this.effects[effectName] = value;
+    this.runtime.requestRedraw();
+  }
+
+  clearEffects() {
+    for (const effectName in this.effects) {
+      if (!this.effects.hasOwnProperty(effectName)) continue;
+      this.effects[effectName] = 0;
+    }
+    this.runtime.requestRedraw();
+  }
   
 
   // Video functions
@@ -173,6 +193,7 @@ class VideoTarget extends Target {
       size: this.size,
       direction: this.direction,
       visible: this.visible,
+      effects: this.effects,
       blocks: {
         _blocks: this.blocks._blocks,
         _scripts: this.blocks._scripts,

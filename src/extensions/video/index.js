@@ -5,6 +5,7 @@ const log = require('../../util/log');
 const VideoTarget = require('../../video/video-target.js');
 const Thread = require('../../engine/thread.js');
 const MathUtil = require('../../util/math-util.js');
+const Cast = require('../../util/cast');
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
@@ -170,7 +171,7 @@ class SteinaVideoBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'video.changeEffectBy',
-                        default: 'change [EFFECT] effect by [VALUE]',
+                        default: 'change [EFFECT] effect by [CHANGE]',
                         description: 'changes the selected effect parameter by the specified value'
                     }),
                     arguments: {
@@ -265,20 +266,36 @@ class SteinaVideoBlocks {
                     },
                     {
                         text: formatMessage({
-                            id: 'video.effectsMenu.crystallize',
-                            default: 'crystallize',
-                            description: 'label for crystallize element in effects picker for video extension'
+                            id: 'video.effectsMenu.brightness',
+                            default: 'brightness',
+                            description: 'label for brightness element in effects picker for video extension'
                         }),
-                        value: VideoEffects.CRYSTALLIZE
+                        value: VideoEffects.BRIGHTNESS
                     },
                     {
                         text: formatMessage({
-                            id: 'video.effectsMenu.kaleidoscope',
-                            default: 'kaleidoscope',
-                            description: 'label for kaleidoscope element in effects picker for video extension'
+                            id: 'video.effectsMenu.ghost',
+                            default: 'ghost',
+                            description: 'label for ghost element in effects picker for video extension'
                         }),
-                        value: VideoEffects.KALEIDOSCOPE
+                        value: VideoEffects.GHOST
                     }
+                    // {
+                    //     text: formatMessage({
+                    //         id: 'video.effectsMenu.crystallize',
+                    //         default: 'crystallize',
+                    //         description: 'label for crystallize element in effects picker for video extension'
+                    //     }),
+                    //     value: VideoEffects.CRYSTALLIZE
+                    // },
+                    // {
+                    //     text: formatMessage({
+                    //         id: 'video.effectsMenu.kaleidoscope',
+                    //         default: 'kaleidoscope',
+                    //         description: 'label for kaleidoscope element in effects picker for video extension'
+                    //     }),
+                    //     value: VideoEffects.KALEIDOSCOPE
+                    // }
                 ]
             }
         };
@@ -413,18 +430,22 @@ class SteinaVideoBlocks {
         target.setCurrentFrame(target.currentFrame - 1);
     }
 
-    changeEffectBy(args) {
-        console.log('changeEffectBy');
-        console.log(args);
+    changeEffectBy(args, util) {
+        const effect = Cast.toString(args.EFFECT).toLowerCase();
+        const change = Cast.toNumber(args.CHANGE);
+        if (!util.target.effects.hasOwnProperty(effect)) return;
+        const newValue = change + util.target.effects[effect];
+        util.target.setEffect(effect, newValue);
     }
 
-    setEffectTo(args) {
-        console.log('setEffectTo');
-        console.log(args);
+    setEffectTo(args, util) {
+        const effect = Cast.toString(args.EFFECT).toLowerCase();
+        const value = Cast.toNumber(args.VALUE);
+        util.target.setEffect(effect, value);
     }
     
-    clearVideoEffects() {
-        console.log('clearVideoEffects');
+    clearVideoEffects(args, util) {
+        util.target.clearEffects();
     }
 
     whenPlayedToEnd(args, util) {
