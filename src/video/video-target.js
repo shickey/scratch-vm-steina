@@ -20,6 +20,8 @@ class VideoTarget extends Target {
 
     // Variables from RenderedTarget
     this.dragging = false;
+    this.dragOffsetX = 0;
+    this.dragOffsetY = 0;
     this.x = 0;
     this.y = 0;
     this.direction = 90;
@@ -45,8 +47,14 @@ class VideoTarget extends Target {
   // Functions from RenderedTarget
   setXY (x, y, force) {
     if (this.dragging && !force) return;
-    this.x = x;
-    this.y = y;
+    if (this.dragging) {
+      this.x = x + this.dragOffsetX;
+      this.y = y + this.dragOffsetY;
+    }
+    else {
+      this.x = x;
+      this.y = y;
+    }
     this.runtime.requestRedraw();
   }
 
