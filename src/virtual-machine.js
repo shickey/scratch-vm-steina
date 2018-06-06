@@ -1091,7 +1091,7 @@ class VirtualMachine extends EventEmitter {
     insertVideoTarget (target, addToOrder = true) {
         this.runtime.targets.push(target);
         if (addToOrder) {
-            this.runtime.videoTargetDrawInfo.order.push(target.id);
+            this.runtime.videoState.order.push(target.id);
         }
         this.emitTargetsUpdate();
         this.emitWorkspaceUpdate();
@@ -1099,7 +1099,7 @@ class VirtualMachine extends EventEmitter {
     }
 
     getVideoTargets () {
-        var order = this.runtime.videoTargetDrawInfo.order;
+        var order = this.runtime.videoState.order;
         return this.runtime.targets.filter(t => (t instanceof VideoTarget)).sort( (a, b) => {
             return order.indexOf(a.id) - order.indexOf(b.id);
         });

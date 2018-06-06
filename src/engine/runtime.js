@@ -261,14 +261,15 @@ class Runtime extends EventEmitter {
         this.profiler = null;
 
         // @NOTE (sean):
-        // We get a little ribald here and add a new data structure
-        // to the runtime to keep track of VideoTarget draw order.
-        // The standard Scratch renderer keeps track of draw order
-        // itself, but since we're adopting the model that the VM
-        // holds all ground truth for the state of entities, we're
-        // storing the draw order in the VM directly.
-        this.videoTargetDrawInfo = {
-          order : [] // Array of target ids
+        // Unlike sound in Scratch, we're adopting the model that the
+        // VM holds all ground truth for the state of entities, so
+        // we're storing the draw order in the runtime directly.
+        // We also keep track of which videos are currently playing
+        // (in a not blocking way) so that the sequencer can update
+        // the current frame for each video during each tick
+        this.videoState = {
+          order : [], // Array of target ids
+          playing: []
         };
 
     }

@@ -27,12 +27,14 @@ class VideoTarget extends Target {
     this.size = 100;
 
     // Video specific variables
+    this.tapped = false;
+    this.playing = false;
     this.fps = 30.0;
     this.frames = 0;
     this.currentFrame = 0;
     this.playbackRate = 100;
 
-    this.drawInfo = runtime.videoTargetDrawInfo;
+    this.runtimeVideoState = runtime.videoState;
 
     if (!!videoInfo) {
       this.fps = videoInfo.fps;
@@ -64,7 +66,7 @@ class VideoTarget extends Target {
   }
 
   goToFront () {
-    var order = this.drawInfo.order;
+    var order = this.runtimeVideoState.order;
     var index = order.indexOf(this.id);
     if (index === -1) {
       log.warn(`Unable to find video target id ${this.id} in drawing order array`);
@@ -75,7 +77,7 @@ class VideoTarget extends Target {
   }
 
   goToBack () {
-    var order = this.drawInfo.order;
+    var order = this.runtimeVideoState.order;
     var index = order.indexOf(this.id);
     if (index === -1) {
       log.warn(`Unable to find video target id ${this.id} in drawing order array`);
@@ -86,7 +88,7 @@ class VideoTarget extends Target {
   }
 
   goForwardLayers (nLayers) {
-    var order = this.drawInfo.order;
+    var order = this.runtimeVideoState.order;
     var index = order.indexOf(this.id);
     if (index === -1) {
       log.warn(`Unable to find video target id ${this.id} in drawing order array`);
@@ -101,7 +103,7 @@ class VideoTarget extends Target {
   }
 
   goBackwardLayers (nLayers) {
-    var order = this.drawInfo.order;
+    var order = this.runtimeVideoState.order;
     var index = order.indexOf(this.id);
     if (index === -1) {
       log.warn(`Unable to find video target id ${this.id} in drawing order array`);
@@ -125,6 +127,25 @@ class VideoTarget extends Target {
   
 
   // Video functions
+
+  // Sets the video play state
+  // If set to true, the video will begin playing without blocking the thread
+  setPlaying (playing) {
+    if (this.playing === !!playing) { return; }
+    
+    this.playing = !!playing
+    if (this.playing) {
+      this.runtimeVideoState.playing.push(this.id)
+    }
+    else {
+      let idx = this.runtimeVideoState.playing.indexOf(this.id)
+      if (idx !== -1) {
+        this.runtimeVideoState.playing.splice(idx, 1);
+      }
+    }
+    this.runtime.requestRedraw();
+  }
+
   setRate (rate) {
     // @TODO: Should we clamp this or is it fun to just go nuts with the rate?
     this.playbackRate = MathUtil.clamp(rate, -1000, 1000);
@@ -132,7 +153,7 @@ class VideoTarget extends Target {
   }
 
   setCurrentFrame (frame) {
-    this.currentFrame = MathUtil.clamp(frame, 0, this.frames);
+    this.currentFrame = MathUtil.clamp(frame, 0, this.frames - 1);
     this.runtime.requestRedraw();
   }
 

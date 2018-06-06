@@ -32,6 +32,15 @@ class SteinaVideoBlocks {
          * @type {Runtime}
          */
         this.runtime = runtime;
+
+        if (this.runtime) {
+            this.runtime.on('PROJECT_STOP_ALL', () => {
+                this.runtime.videoState.playing.forEach( vId => {
+                    let target = this.runtime.getTargetById(vId)
+                    target.setPlaying(false);
+                });
+            });
+        }
     }
 
     /**
@@ -44,13 +53,13 @@ class SteinaVideoBlocks {
             // blockIconURI: blockIconURI,
             blocks: [
                 {
-                    opcode: 'playUntilDone',
+                    opcode: 'playEntireVideoUntilDone',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.playUntilDone',
-                        default: 'play video until done',
-                        description: 'plays the video at the current rate while blocking the thread ' +
-                                     'until reaching the end (or beginning if the rate is negative)'
+                        id: 'video.playEntireVideoUntilDone',
+                        default: 'play entire video until done',
+                        description: 'plays the entire video at 100% playback rate from the first frame ' +
+                                     'until reaching the last frame'
                     })
                 },
                 {
@@ -69,11 +78,30 @@ class SteinaVideoBlocks {
                     }
                 },
                 {
+                    opcode: 'startPlaying',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.startPlaying',
+                        default: 'start playing video',
+                        description: 'plays the video at the current rate wihtout blocking the thread ' +
+                                     'until reaching the end (or beginning if the rate is negative)'
+                    })
+                },
+                {
+                    opcode: 'stopPlaying',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.stopPlaying',
+                        default: 'stop playing video',
+                        description: 'stops the video at the current frame, if necessary'
+                    })
+                },
+                {
                     opcode: 'goToFrame',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'video.goToFrame',
-                        default: 'go to video frame [FRAME]',
+                        default: 'go to frame [FRAME]',
                         description: 'sets the current video frame'
                     }),
                     arguments: {
@@ -83,26 +111,42 @@ class SteinaVideoBlocks {
                         }
                     }
                 },
-                // {
-                //     opcode: 'playFromTo',
-                //     blockType: BlockType.COMMAND,
-                //     text: formatMessage({
-                //         id: 'video.playFromTo',
-                //         default: 'play from frame [FROM] to frame [TO]',
-                //         description: 'plays from one frame to another at the current playback, taking ' +
-                //                      'into account playback direction and rate direction'
-                //     }),
-                //     arguments: {
-                //         FROM: {
-                //             type: ArgumentType.NUMBER,
-                //             defaultValue: 0
-                //         },
-                //         TO: {
-                //             type: ArgumentType.NUMBER,
-                //             defaultValue: 300 // @TODO: How do we automatically set this to the final frame number?
-                //         },
-                //     }
-                // },
+                {
+                    opcode: 'playNFrames',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.playNFrames',
+                        default: 'play [FRAMES] frames until done',
+                        description: 'plays FRAMES frames at the current playback rate ' +
+                                     'blocking the thread until completion'
+                    }),
+                    arguments: {
+                        FRAMES: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 30 // One second
+                        }
+                    }
+                },
+                {
+                    opcode: 'playForwardUntilDone',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.playForwardUntilDone',
+                        default: 'play forward until done',
+                        description: 'plays the video at the absolute value of the playback rate ' +
+                                     'from the current frame until reaching the last frame'
+                    })
+                },
+                {
+                    opcode: 'playBackwardUntilDone',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'video.playBackwardUntilDone',
+                        default: 'play backward until done',
+                        description: 'plays the video at the negative absolute value of the playback rate ' +
+                                     'from the current frame until reaching the first frame'
+                    })
+                },
                 {
                     opcode: 'nextFrame',
                     blockType: BlockType.COMMAND,
@@ -169,6 +213,36 @@ class SteinaVideoBlocks {
                         default: 'clear video effects',
                         description: 'reset video effects state to the default'
                     })
+                },
+                {
+                    opcode: 'whenPlayedToEnd',
+                    text: 'when played to end',
+                    blockType: BlockType.HAT
+                },
+                {
+                    opcode: 'whenPlayedToBeginning',
+                    text: 'when played to beginning',
+                    blockType: BlockType.HAT
+                },
+                {
+                    opcode: 'whenTapped',
+                    text: 'when tapped',
+                    blockType: BlockType.HAT
+                },
+                {
+                    opcode: 'getCurrentFrame',
+                    text: 'current frame',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'getTotalFrames',
+                    text: 'total frames',
+                    blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'getPlayRate',
+                    text: 'play rate',
+                    blockType: BlockType.REPORTER
                 }
             ],
             menus: {
@@ -210,19 +284,22 @@ class SteinaVideoBlocks {
         };
     }
 
-    playUntilDone(args, util) {
+    playEntireVideoUntilDone(args, util) {
         var target = util.target;
         var thread = util.thread;
         if (util.stackFrame.playing) {
-            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
+            // We play the video at the normal 100% rate (but we don't change the rate property)
+            // @TODO: Does this make sense? Should we update the rate? Should there be a rate
+            //        argument available on the block?
+            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * target.fps);
             var nextFrame = target.currentFrame + frameIncrement;
             if (nextFrame < 0) {
                 target.setCurrentFrame(0);
                 util.stackFrame.playing = false;
                 return;
             }
-            else if (nextFrame > target.frames) {
-                target.setCurrentFrame(target.frames);
+            else if (nextFrame >= (target.frames - 1)) {
+                target.setCurrentFrame(target.frames - 1);
                 util.stackFrame.playing = false;
                 return;
             }
@@ -231,6 +308,7 @@ class SteinaVideoBlocks {
         }
         else {
             util.stackFrame.playing = true;
+            target.setCurrentFrame(0);
             thread.status = Thread.STATUS_YIELD_TICK;
         }
     }
@@ -239,31 +317,91 @@ class SteinaVideoBlocks {
         util.target.setRate(args.RATE);
     }
 
-    goToFrame(args, util) {
-        util.target.setCurrentFrame(args.FRAME);
+    startPlaying(args, util) {
+        var target = util.target;
+        if (target.playing) { return; }
+        target.setPlaying(true);
     }
 
-    // playFromTo(args, util) {
-    //     var target = util.target;
-    //     if (util.stackFrame.playing) {
-    //         var from = util.stackFrame.from;
-    //         var to = util.stackFrame.to;
-    //         var currentFrame = target.currentFrame;
-    //         var rate = target.playbackRate;
-    //         // Make sure the rate 
-    //         if ((from > to && rate > 0) || (to < from && rate < 0)) {
-    //             rate *= -1.0
-    //         }
-    //     }
-    //     else {
-    //         util.stackFrame.from = MathUtil.clamp(args.FROM, 0, target.frames);
-    //         util.stackFrame.to = MathUtil.clamp(args.TO, 0, target.frames);
+    stopPlaying(args, util) {
+        var target = util.target;
+        if (!target.playing) { return; }
+        target.setPlaying(false);
+    }
 
-    //         util.stackFrame.playing = true;
-    //         target.setCurrentFrame(util.stackFrame.from);
-    //         thread.status = Thread.STATUS_YIELD_TICK;
-    //     }
-    // }
+    goToFrame(args, util) {
+        // Frames are 1-indexed in the blocks, but 0-indexed in the target
+        util.target.setCurrentFrame(args.FRAME - 1);
+    }
+
+    playNFrames(args, util) {
+        var target = util.target;
+        var thread = util.thread;
+        if (util.stackFrame.playing) {
+            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
+            var nextFrame = target.currentFrame + frameIncrement;
+            if ((target.playbackRate < 0 && nextFrame <= util.stackFrame.targetFrame) ||
+                (target.playbackRate >= 0 && nextFrame >= util.stackFrame.targetFrame)) {
+                util.stackFrame.playing = false;
+                target.setCurrentFrame(nextFrame)
+                return;
+            }
+            target.setCurrentFrame(nextFrame)
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
+        else {
+            var framesToPlay = +(args.FRAMES);
+            if (target.playbackRate < 0) {
+                framesToPlay *= -1.0
+            }
+            var targetFrame = MathUtil.clamp(target.currentFrame + framesToPlay, 0, target.frames - 1);
+            util.stackFrame.playing = true;
+            util.stackFrame.targetFrame = targetFrame;
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
+    }
+
+    playForwardUntilDone(args, util) {
+        var target = util.target;
+        var thread = util.thread;
+        if (util.stackFrame.playing) {
+            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (Math.abs(target.playbackRate) / 100.0)) * target.fps;
+            var nextFrame = target.currentFrame + frameIncrement;
+            if (nextFrame >= util.stackFrame.targetFrame) {
+                util.stackFrame.playing = false;
+                target.setCurrentFrame(util.stackFrame.targetFrame)
+                return;
+            }
+            target.setCurrentFrame(nextFrame)
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
+        else {
+            util.stackFrame.playing = true;
+            util.stackFrame.targetFrame = target.frames - 1;
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
+    }
+
+    playBackwardUntilDone(args, util) {
+        var target = util.target;
+        var thread = util.thread;
+        if (util.stackFrame.playing) {
+            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (-Math.abs(target.playbackRate) / 100.0)) * target.fps;
+            var nextFrame = target.currentFrame + frameIncrement;
+            if (nextFrame <= util.stackFrame.targetFrame) {
+                util.stackFrame.playing = false;
+                target.setCurrentFrame(util.stackFrame.targetFrame)
+                return;
+            }
+            target.setCurrentFrame(nextFrame)
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
+        else {
+            util.stackFrame.playing = true;
+            util.stackFrame.targetFrame = 0;
+            thread.status = Thread.STATUS_YIELD_TICK;
+        }
+    }
 
     nextFrame(args, util) {
         var target = util.target;
@@ -287,6 +425,45 @@ class SteinaVideoBlocks {
     
     clearVideoEffects() {
         console.log('clearVideoEffects');
+    }
+
+    whenPlayedToEnd(args, util) {
+        var target = util.target;
+        if (target.currentFrame == target.frames - 1) {
+            return true;
+        }
+        return false;
+    }
+
+    whenPlayedToBeginning(args, util) {
+        var target = util.target;
+        if (target.currentFrame == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    whenTapped(args, util) {
+        var target = util.target;
+        if (target.tapped) {
+            target.tapped = false;
+            return true;
+        }
+        return false;
+    }
+
+    getCurrentFrame(args, util) {
+        // @TODO: Should this return an integer or a float? We're going with integer for now
+        var target = util.target;
+        return +(target.currentFrame) + 1; // 1-indexed
+    }
+
+    getTotalFrames(args, util) {
+        return util.target.frames;
+    }
+
+    getPlayRate(args, util) {
+        return util.target.playbackRate;
     }
 
 }

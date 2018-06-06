@@ -68,8 +68,6 @@ class Sequencer {
     stepThreads () {
         // @NOTE (sean): We redefine the work time to be only 1/3 of the step
         //               time which at 30 FPS is ~11ms
-        // // Work time is 75% of the thread stepping interval.
-        // const WORK_TIME = 0.75 * this.runtime.currentStepTime;
         const WORK_TIME = 0.33 * this.runtime.currentStepTime;
         // Start counting toward WORK_TIME.
         this.timer.start();
@@ -162,6 +160,38 @@ class Sequencer {
             }
         }
         doneThreads.length = numDoneThreads;
+
+        // @NOTE (sean):
+        // Here's where we update the current frame for any videos
+        // that are current playing in a non-blocking way.
+        var playingVideoIds = this.runtime.videoState.playing;
+        var doneVideoIds = [];
+        for (let i = 0; i < playingVideoIds.length; ++i) {
+            let targetId = playingVideoIds[i];
+            let target = this.runtime.getTargetById(targetId);
+            var frameIncrement = ((this.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
+            var nextFrame = target.currentFrame + frameIncrement;
+            if (nextFrame <= 0) {
+                target.setCurrentFrame(0);
+                target.playing = false; // We purposefully don't use the accessor here
+                                        // since that would try to remove the video from
+                                        // the play queue immediately
+                doneVideoIds.push(targetId);
+            }
+            else if (nextFrame >= (target.frames - 1)) {
+                target.setCurrentFrame(target.frames - 1);
+                target.playing = false;
+                doneVideoIds.push(targetId);
+            }
+            else {
+                target.setCurrentFrame(nextFrame);
+            }
+        }
+
+        this.runtime.videoState.playing = playingVideoIds.filter( id => {
+            // Remove all videos that have been added to the doneVideoIds array
+            return (doneVideoIds.indexOf(id) === -1)
+        })
 
         return doneThreads;
     }
