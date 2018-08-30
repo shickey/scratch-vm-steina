@@ -1073,17 +1073,16 @@ class VirtualMachine extends EventEmitter {
         this.insertVideoTarget(target);
     }
 
-    inflateVideoTarget (id, targetJson) {
-        var inflated = JSON.parse(targetJson);
+    inflateVideoTarget (id, targetObj) {
         var target = new VideoTarget(this.runtime, id);
-        for (var key in inflated) {
+        for (var key in targetObj) {
             if (key == 'blocks') {
-                let savedBlocks = inflated[key];
+                let savedBlocks = targetObj[key];
                 target.blocks._blocks = Clone.simple(savedBlocks._blocks);
                 target.blocks._scripts = Clone.simple(savedBlocks._scripts);
                 continue;
             }
-            target[key] = inflated[key];
+            target[key] = targetObj[key];
         }
         this.insertVideoTarget(target, false);
     }
