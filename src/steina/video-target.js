@@ -3,10 +3,10 @@ const Target = require('../engine/target');
 const MathUtil = require('../util/math-util');
 
 /**
- * Video target: run object representing the state of a video object
+ * Video target: runtime object representing the state of a video object
  * 
  * This declares several of the variables and functions of RenderedTarget
- * allowing us to use many of the motion and looks block out the box
+ * allowing us to use many of the motion and looks blocks out the box
  */
 class VideoTarget extends Target {
 
@@ -34,7 +34,7 @@ class VideoTarget extends Target {
       ghost: 0
     };
 
-    // Video specific variables
+    // Video specific state
     this.tapped = false;
     this.playing = false;
     this.fps = 30.0;

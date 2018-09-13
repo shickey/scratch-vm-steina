@@ -20,7 +20,8 @@ const {loadSound} = require('./import/load-sound.js');
 const {serializeSounds, serializeCostumes} = require('./serialization/serialize-assets');
 require('canvas-toBlob');
 
-const VideoTarget = require('./video/video-target.js');
+const VideoTarget = require('./steina/video-target.js');
+const AudioTarget = require('./steina/audio-target.js');
 const Clone = require('./util/clone.js');
 
 const RESERVED_NAMES = ['_mouse_', '_stage_', '_edge_', '_myself_', '_random_'];
@@ -1107,6 +1108,36 @@ class VirtualMachine extends EventEmitter {
     updateDrag(dragInfo) {
         if (!this._dragTarget) return;
         this._dragTarget.setXY(dragInfo.x, dragInfo.y, true);
+    }
+
+    createAudioTarget (id, markers) {
+        var target = new AudioTarget(this.runtime, id, markers);
+        this.insertAudioTarget(target);
+    }
+
+    inflateAudioTarget (id, targetObj) {
+        var target = new AudioTarget(this.runtime, id);
+        for (var key in targetObj) {
+            if (key == 'blocks') {
+                let savedBlocks = targetObj[key];
+                target.blocks._blocks = Clone.simple(savedBlocks._blocks);
+                target.blocks._scripts = Clone.simple(savedBlocks._scripts);
+                continue;
+            }
+            target[key] = targetObj[key];
+        }
+        this.insertAudioTarget(target);
+    }
+
+    insertAudioTarget (target) {
+        this.runtime.targets.push(target);
+        this.emitTargetsUpdate();
+        this.emitWorkspaceUpdate();
+        this.setEditingTarget(target.id);
+    }
+
+    getAudioTargets () {
+        return this.runtime.targets.filter(t => (t instanceof AudioTarget))
     }
 }
 

@@ -2,7 +2,8 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 const log = require('../../util/log');
-const VideoTarget = require('../../video/video-target.js');
+const VideoTarget = require('../../steina/video-target.js');
+const AudioTarget = require('../../steina/audio-target.js');
 const Thread = require('../../engine/thread.js');
 const MathUtil = require('../../util/math-util.js');
 const Cast = require('../../util/cast');
@@ -22,11 +23,11 @@ const VideoEffects = {
 }
 
 /**
- * Host for the video-related blocks in Steina
+ * Host for the video and audio-related blocks in Steina
  * @param {Runtime} runtime - the runtime instantiating this block package.
  * @constructor
  */
-class SteinaVideoBlocks {
+class SteinaBlocks {
     constructor (runtime) {
         /**
          * The runtime instantiating this block package.
@@ -49,15 +50,16 @@ class SteinaVideoBlocks {
      */
     getInfo () {
         return {
-            id: 'video',
-            name: 'Video',
+            id: 'steina',
+            name: 'Steina',
             // blockIconURI: blockIconURI,
             blocks: [
+                // Video
                 {
                     opcode: 'playEntireVideoUntilDone',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.playEntireVideoUntilDone',
+                        id: 'steina.video.playEntireVideoUntilDone',
                         default: 'play entire video until done',
                         description: 'plays the entire video at 100% playback rate from the first frame ' +
                                      'until reaching the last frame'
@@ -67,7 +69,7 @@ class SteinaVideoBlocks {
                     opcode: 'setPlayRate',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.setPlayRate',
+                        id: 'steina.video.setPlayRate',
                         default: 'set play rate to [RATE] %',
                         description: 'sets the playback rate of the video as a percentage'
                     }),
@@ -82,7 +84,7 @@ class SteinaVideoBlocks {
                     opcode: 'startPlaying',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.startPlaying',
+                        id: 'steina.video.startPlaying',
                         default: 'start playing video',
                         description: 'plays the video at the current rate wihtout blocking the thread ' +
                                      'until reaching the end (or beginning if the rate is negative)'
@@ -92,7 +94,7 @@ class SteinaVideoBlocks {
                     opcode: 'stopPlaying',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.stopPlaying',
+                        id: 'steina.video.stopPlaying',
                         default: 'stop playing video',
                         description: 'stops the video at the current frame, if necessary'
                     })
@@ -101,7 +103,7 @@ class SteinaVideoBlocks {
                     opcode: 'goToFrame',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.goToFrame',
+                        id: 'steina.video.goToFrame',
                         default: 'go to frame [FRAME]',
                         description: 'sets the current video frame'
                     }),
@@ -116,7 +118,7 @@ class SteinaVideoBlocks {
                     opcode: 'playNFrames',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.playNFrames',
+                        id: 'steina.video.playNFrames',
                         default: 'play [FRAMES] frames until done',
                         description: 'plays FRAMES frames at the current playback rate ' +
                                      'blocking the thread until completion'
@@ -132,7 +134,7 @@ class SteinaVideoBlocks {
                     opcode: 'playForwardUntilDone',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.playForwardUntilDone',
+                        id: 'steina.video.playForwardUntilDone',
                         default: 'play forward until done',
                         description: 'plays the video at the absolute value of the playback rate ' +
                                      'from the current frame until reaching the last frame'
@@ -142,7 +144,7 @@ class SteinaVideoBlocks {
                     opcode: 'playBackwardUntilDone',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.playBackwardUntilDone',
+                        id: 'steina.video.playBackwardUntilDone',
                         default: 'play backward until done',
                         description: 'plays the video at the negative absolute value of the playback rate ' +
                                      'from the current frame until reaching the first frame'
@@ -152,7 +154,7 @@ class SteinaVideoBlocks {
                     opcode: 'nextFrame',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.nextFrame',
+                        id: 'steina.video.nextFrame',
                         default: 'go to next frame',
                         description: 'increments the current video frame'
                     })
@@ -161,7 +163,7 @@ class SteinaVideoBlocks {
                     opcode: 'previousFrame',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.previousFrame',
+                        id: 'steina.video.previousFrame',
                         default: 'go to previous frame',
                         description: 'decrements the current video frame'
                     })
@@ -170,7 +172,7 @@ class SteinaVideoBlocks {
                     opcode: 'changeEffectBy',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.changeEffectBy',
+                        id: 'steina.video.changeEffectBy',
                         default: 'change [EFFECT] effect by [CHANGE]',
                         description: 'changes the selected effect parameter by the specified value'
                     }),
@@ -190,7 +192,7 @@ class SteinaVideoBlocks {
                     opcode: 'setEffectTo',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.setEffectTo',
+                        id: 'steina.video.setEffectTo',
                         default: 'set [EFFECT] effect to [VALUE]',
                         description: 'sets the effect parameter for the selected effect'
                     }),
@@ -210,7 +212,7 @@ class SteinaVideoBlocks {
                     opcode: 'clearVideoEffects',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
-                        id: 'video.clearVideoEffects',
+                        id: 'steina.video.clearVideoEffects',
                         default: 'clear video effects',
                         description: 'reset video effects state to the default'
                     })
@@ -244,13 +246,87 @@ class SteinaVideoBlocks {
                     opcode: 'getPlayRate',
                     text: 'play rate',
                     blockType: BlockType.REPORTER
+                },
+
+                // Audio
+                {
+                    opcode: 'startSound',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.audio.startSound',
+                        default: 'start sound',
+                        description: 'plays the entire sound without blocking'
+                    })
+                },
+                {
+                    opcode: 'playSound',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.audio.playSound',
+                        default: 'play sound',
+                        description: 'plays the entire sound while blocking execution'
+                    })
+                },
+                {
+                    opcode: 'playSoundFromAToB',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.audio.playSoundFromAToB',
+                        default: 'play sound from [MARKER_A] to [MARKER_B]',
+                        description: 'plays the sound between two markers while blocking execution'
+                    }),
+                    arguments: {
+                        MARKER_A: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0
+                        },
+                        MARKER_B: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 10
+                        }
+                    }
+                },
+                {
+                    opcode: 'setVolumeTo',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.setVolumeTo',
+                        default: 'set volume to [VALUE]',
+                        description: 'sets the volume to the given value, clamping between 0 and 500'
+                    }),
+                    arguments: {
+                        VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 100
+                        }
+                    }
+                },
+                {
+                    opcode: 'changeVolumeBy',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.changeVolumeBy',
+                        default: 'change volume by [VALUE]',
+                        description: 'changes the volume by the given value, clamping between 0 and 500'
+                    }),
+                    arguments: {
+                        VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 10
+                        }
+                    }
+                },
+                {
+                    opcode: 'getVolume',
+                    text: 'volume',
+                    blockType: BlockType.REPORTER
                 }
             ],
             menus: {
                 effects: [
                     {
                         text: formatMessage({
-                            id: 'video.effectsMenu.color',
+                            id: 'steina.video.effectsMenu.color',
                             default: 'color',
                             description: 'label for color element in effects picker for video extension'
                         }),
@@ -258,7 +334,7 @@ class SteinaVideoBlocks {
                     },
                     {
                         text: formatMessage({
-                            id: 'video.effectsMenu.whirl',
+                            id: 'steina.video.effectsMenu.whirl',
                             default: 'whirl',
                             description: 'label for whirl element in effects picker for video extension'
                         }),
@@ -266,7 +342,7 @@ class SteinaVideoBlocks {
                     },
                     {
                         text: formatMessage({
-                            id: 'video.effectsMenu.brightness',
+                            id: 'steina.video.effectsMenu.brightness',
                             default: 'brightness',
                             description: 'label for brightness element in effects picker for video extension'
                         }),
@@ -274,7 +350,7 @@ class SteinaVideoBlocks {
                     },
                     {
                         text: formatMessage({
-                            id: 'video.effectsMenu.ghost',
+                            id: 'steina.video.effectsMenu.ghost',
                             default: 'ghost',
                             description: 'label for ghost element in effects picker for video extension'
                         }),
@@ -300,6 +376,8 @@ class SteinaVideoBlocks {
             }
         };
     }
+
+    // Video
 
     playEntireVideoUntilDone(args, util) {
         var target = util.target;
@@ -487,6 +565,35 @@ class SteinaVideoBlocks {
         return util.target.playbackRate;
     }
 
+    // Audio
+    startSound(args, util) {
+        console.log("start sound");
+    }
+
+    playSound(args, util) {
+        console.log("play sound");
+    }
+
+    playSoundFromAToB(args, util) {
+        console.log("play sound from a to b");
+    }
+
+    setVolumeTo(args, util) {
+        console.log("set volume to");
+        util.target.setVolume(args.VALUE)
+    }
+
+    changeVolumeBy(args, util) {
+        console.log("change volume by");
+        var target = util.target;
+        target.setVolume(+(target.volume) + +(args.VALUE));
+    }
+
+    getVolume(args, util) {
+        console.log("report volume");
+        return util.target.volume;
+    }
+
 }
 
-module.exports = SteinaVideoBlocks;
+module.exports = SteinaBlocks;
