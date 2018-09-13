@@ -272,6 +272,12 @@ class Runtime extends EventEmitter {
           playing: []
         };
 
+        // @NOTE (sean):
+        // We do a similar thing for audio here
+        this.audioState = {
+            playing: {}
+        }
+
     }
 
     /**

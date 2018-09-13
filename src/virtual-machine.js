@@ -1110,8 +1110,8 @@ class VirtualMachine extends EventEmitter {
         this._dragTarget.setXY(dragInfo.x, dragInfo.y, true);
     }
 
-    createAudioTarget (id, markers) {
-        var target = new AudioTarget(this.runtime, id, markers);
+    createAudioTarget (id, audioInfo) {
+        var target = new AudioTarget(this.runtime, id, audioInfo);
         this.insertAudioTarget(target);
     }
 

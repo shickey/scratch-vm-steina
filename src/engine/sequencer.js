@@ -193,6 +193,33 @@ class Sequencer {
             return (doneVideoIds.indexOf(id) === -1)
         })
 
+        // @NOTE (sean):
+        // And similarly for playing sounds
+        var playingSounds = this.runtime.audioState.playing;
+        var playingSoundIdsToRemove = [];
+        for (var playingSoundId in playingSounds) {
+            var sound = playingSounds[playingSoundId];
+
+            // If the sound finished on the last frame, schedule it for removal
+            if (sound.playhead == sound.end) {
+                playingSoundIdsToRemove.push(playingSoundId);
+                continue;
+            }
+
+            var sampleIncrement = (this.runtime.currentStepTime / 1000.0) * sound.sampleRate;
+            var nextPlayhead = sound.playhead + sampleIncrement;
+            if (nextPlayhead > sound.end) {
+                nextPlayhead = sound.end;
+            }
+            sound.prevPlayhead = sound.playhead;
+            sound.playhead = nextPlayhead;
+        }
+
+        // Remove all finished sounds
+        playingSoundIdsToRemove.forEach( id => {
+            delete this.runtime.audioState.playing[id];
+        })
+
         return doneThreads;
     }
 

@@ -6,6 +6,7 @@ const VideoTarget = require('../../steina/video-target.js');
 const AudioTarget = require('../../steina/audio-target.js');
 const Thread = require('../../engine/thread.js');
 const MathUtil = require('../../util/math-util.js');
+const uid = require('../../util/uid.js');
 const Cast = require('../../util/cast');
 
 /**
@@ -567,31 +568,82 @@ class SteinaBlocks {
 
     // Audio
     startSound(args, util) {
-        console.log("start sound");
+        var target = util.target;
+
+        // Just queue the sound and don't yield the thread
+        this._queueSound(util.runtime, target, 0, target.totalSamples - 1);
     }
 
     playSound(args, util) {
-        console.log("play sound");
+        var target = util.target;
+        var thread = util.thread;
+
+        if (!util.stackFrame.playingId) {
+            // Add the new sound to the play queue
+            var id = this._queueSound(util.runtime, target, 0, target.totalSamples - 1);
+
+            util.stackFrame.playingId = id;
+        }
+        else {
+            var playingId = util.stackFrame.playingId;
+            if (!util.playingSounds[playingId]) {
+                // The sound finished on the last frame
+                // and was removed by the runtime, so we're done
+                return;
+            }
+        }
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     playSoundFromAToB(args, util) {
-        console.log("play sound from a to b");
+        var target = util.target;
+        var thread = util.thread;
+
+        if (!util.stackFrame.playingId) {
+            // Add the new sound to the play queue
+            var id = this._queueSound(util.runtime, target, +(args.MARKER_A), +(args.MARKER_B));
+
+            util.stackFrame.playingId = id;
+        }
+        else {
+            var playingId = util.stackFrame.playingId;
+            if (!util.runtime.audioState.playing[playingId]) {
+                // The sound finished on the last frame
+                // and was removed by the runtime, so we're done
+                return;
+            }
+        }
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     setVolumeTo(args, util) {
-        console.log("set volume to");
         util.target.setVolume(args.VALUE)
     }
 
     changeVolumeBy(args, util) {
-        console.log("change volume by");
         var target = util.target;
         target.setVolume(+(target.volume) + +(args.VALUE));
     }
 
     getVolume(args, util) {
-        console.log("report volume");
         return util.target.volume;
+    }
+
+    _queueSound(runtime, audioTarget, start, end) {
+        var id = uid();
+        var firstSample = Math.max(start, 0);
+        var lastSample = Math.min(end, audioTarget.totalSamples - 1);
+        var playingSound = {
+            audioTargetId : audioTarget.id,
+            sampleRate: audioTarget.sampleRate,
+            start: firstSample,
+            end: lastSample,
+            prevPlayhead: firstSample,
+            playhead: firstSample
+        };
+        runtime.audioState.playing[id] = playingSound;
+
+        return id;
     }
 
 }

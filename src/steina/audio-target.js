@@ -8,7 +8,7 @@ const MathUtil = require('../util/math-util');
  */
 class AudioTarget extends Target {
 
-  constructor(runtime, id, markers) {
+  constructor(runtime, id, audioInfo) {
     super(runtime, null);
 
     // Overwrite the id to match the id in Core Data
@@ -20,10 +20,14 @@ class AudioTarget extends Target {
     this.volume = 100;
 
     // Audio specific state
-    this.markers = []
+    this.totalSamples = 0;
+    this.sampleRate = 48000;
+    this.markers = [];
 
-    if (!!markers) {
-      this.markers = markers;
+    if (!!audioInfo) {
+      this.totalSamples = audioInfo.totalSamples || 0;
+      this.sampleRate = audioInfo.sampleRate || 48000;
+      this.markers = audioInfo.markers || [];
     }
   }
 
