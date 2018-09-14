@@ -586,7 +586,7 @@ class SteinaBlocks {
         }
         else {
             var playingId = util.stackFrame.playingId;
-            if (!util.playingSounds[playingId]) {
+            if (!util.runtime.audioState.playing[playingId]) {
                 // The sound finished on the last frame
                 // and was removed by the runtime, so we're done
                 return;

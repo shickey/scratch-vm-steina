@@ -12,9 +12,7 @@ class AudioTarget extends Target {
     super(runtime, null);
 
     // Overwrite the id to match the id in Core Data
-    if (id) {
-      this.id = id;
-    }
+    this.id = id;
 
     // Variables from RenderedTarget
     this.volume = 100;
