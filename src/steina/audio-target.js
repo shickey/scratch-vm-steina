@@ -37,6 +37,8 @@ class AudioTarget extends Target {
     return {
       id: this.id,
       volume: this.volume,
+      totalSamples: this.totalSamples,
+      sampleRate: this.sampleRate,
       blocks: {
         _blocks: this.blocks._blocks,
         _scripts: this.blocks._scripts,
