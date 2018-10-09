@@ -42,6 +42,12 @@ class SteinaBlocks {
                     let target = this.runtime.getTargetById(vId)
                     target.setPlaying(false);
                 });
+                this.runtime.audioState.playing = {};
+                this.runtime.targets.forEach(t => {
+                    if (t.hasOwnProperty("nonblockingSoundsAvailable")) {
+                        t.nonblockingSoundsAvailable = AudioTarget.MAX_SIMULTANEOUS_NONBLOCKING_SOUNDS;
+                    }
+                })
             });
         }
     }
@@ -570,8 +576,13 @@ class SteinaBlocks {
     startSound(args, util) {
         var target = util.target;
 
-        // Just queue the sound and don't yield the thread
-        this._queueSound(util.runtime, target, 0, target.totalSamples - 1);
+        // Only start a sound if we're below the limit of simultaneous
+        // unblocking sounds
+        if (target.nonblockingSoundsAvailable > 0) {
+            // Just queue the sound and don't yield the thread
+            this._queueSound(util.runtime, target, 0, target.totalSamples - 1, false);
+            target.nonblockingSoundsAvailable--;
+        }
     }
 
     playSound(args, util) {
@@ -629,7 +640,7 @@ class SteinaBlocks {
         return util.target.volume;
     }
 
-    _queueSound(runtime, audioTarget, start, end) {
+    _queueSound(runtime, audioTarget, start, end, blocking = true) {
         var id = uid();
         var firstSample = Math.max(start, 0);
         var lastSample = Math.min(end, audioTarget.totalSamples - 1);
@@ -639,7 +650,8 @@ class SteinaBlocks {
             start: firstSample,
             end: lastSample,
             prevPlayhead: firstSample,
-            playhead: firstSample
+            playhead: firstSample,
+            blocking: blocking
         };
         runtime.audioState.playing[id] = playingSound;
 

@@ -8,6 +8,10 @@ const MathUtil = require('../util/math-util');
  */
 class AudioTarget extends Target {
 
+  static get MAX_SIMULTANEOUS_NONBLOCKING_SOUNDS () {
+        return 25;
+    }
+
   constructor(runtime, id, audioInfo) {
     super(runtime, null);
 
@@ -21,6 +25,7 @@ class AudioTarget extends Target {
     this.totalSamples = 0;
     this.sampleRate = 48000;
     this.markers = [];
+    this.nonblockingSoundsAvailable = AudioTarget.MAX_SIMULTANEOUS_NONBLOCKING_SOUNDS;
 
     if (!!audioInfo) {
       this.totalSamples = audioInfo.totalSamples || 0;

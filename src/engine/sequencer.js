@@ -217,6 +217,16 @@ class Sequencer {
 
         // Remove all finished sounds
         playingSoundIdsToRemove.forEach( id => {
+            var soundToDelete = playingSounds[id];
+
+            // If this is a nonblocking sound, increment the counter
+            // to allow new sounds to get queued
+            if (!soundToDelete.blocking) {
+                var targetId = soundToDelete.audioTargetId;
+                var target = this.runtime.getTargetById(targetId);
+                target.nonblockingSoundsAvailable++;
+            }
+
             delete this.runtime.audioState.playing[id];
         })
 
