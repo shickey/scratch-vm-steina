@@ -285,11 +285,11 @@ class SteinaBlocks {
                     arguments: {
                         MARKER_A: {
                             type: ArgumentType.NUMBER,
-                            defaultValue: 0
+                            menu: 'markers'
                         },
                         MARKER_B: {
                             type: ArgumentType.NUMBER,
-                            defaultValue: 10
+                            menu: 'markers'
                         }
                     }
                 },
@@ -379,9 +379,46 @@ class SteinaBlocks {
                     //     }),
                     //     value: VideoEffects.KALEIDOSCOPE
                     // }
-                ]
+                ],
+                // markers: this._buildMarkersMenu()
+                markers: '_buildMarkersMenu'
             }
         };
+    }
+
+    _buildMarkersMenu(targetId) {
+        var target = this.runtime.getTargetById(targetId);
+        if (target.hasOwnProperty('markers')) {
+            var markers = target.markers;
+            var menuItems = [
+                {
+                    text: 'start',
+                    value: 0
+                }
+            ];
+
+            for (var i = 0; i < markers.length; ++i) {
+                var marker = markers[i];
+                menuItems.push({
+                    text: (i + 1).toString(),
+                    value: marker
+                })
+            }
+
+            menuItems.push({
+                text: 'end',
+                value: target.totalSamples
+            });
+
+            return menuItems;
+        }
+
+        return [
+            {
+                text: 'n/a',
+                value: 0
+            }
+        ]
     }
 
     // Video
@@ -610,9 +647,16 @@ class SteinaBlocks {
         var target = util.target;
         var thread = util.thread;
 
+        var start = +(args.MARKER_A);
+        var end = +(args.MARKER_B);
+
+        if (start >= end) {
+            return;
+        }
+
         if (!util.stackFrame.playingId) {
             // Add the new sound to the play queue
-            var id = this._queueSound(util.runtime, target, +(args.MARKER_A), +(args.MARKER_B));
+            var id = this._queueSound(util.runtime, target, start, end);
 
             util.stackFrame.playingId = id;
         }
