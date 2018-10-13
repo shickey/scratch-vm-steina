@@ -393,7 +393,7 @@ class SteinaBlocks {
             var menuItems = [
                 {
                     text: 'start',
-                    value: 0
+                    value: '0'
                 }
             ];
 
@@ -401,13 +401,13 @@ class SteinaBlocks {
                 var marker = markers[i];
                 menuItems.push({
                     text: (i + 1).toString(),
-                    value: marker
+                    value: marker.toString()
                 })
             }
 
             menuItems.push({
                 text: 'end',
-                value: target.totalSamples
+                value: target.totalSamples.toString()
             });
 
             return menuItems;
@@ -416,7 +416,7 @@ class SteinaBlocks {
         return [
             {
                 text: 'n/a',
-                value: 0
+                value: '0'
             }
         ]
     }
