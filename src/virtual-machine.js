@@ -1037,8 +1037,6 @@ class VirtualMachine extends EventEmitter {
         if (target) {
             this._dragTarget = target;
             target.startDrag();
-            // this.setEditingTarget(target.sprite && target.sprite.clones[0] ?
-            //     target.sprite.clones[0].id : target.id);
         }
     }
 
@@ -1046,11 +1044,15 @@ class VirtualMachine extends EventEmitter {
      * Remove a target from a drag state, so blocks may begin affecting X/Y position again
      * @param {string} targetId The id for the target to remove from the drag state
      */
-    stopDrag (targetId) {
+    stopDrag (targetId, updateDragTarget) {
         const target = this.runtime.getTargetById(targetId);
         if (target) {
             this._dragTarget = null;
             target.stopDrag();
+            if (updateDragTarget) {
+                this.setEditingTarget(target.sprite && target.sprite.clones[0] ?
+                    target.sprite.clones[0].id : target.id);
+            }
         }
     }
 
