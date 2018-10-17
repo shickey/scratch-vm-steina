@@ -1139,6 +1139,15 @@ class VirtualMachine extends EventEmitter {
     getAudioTargets () {
         return this.runtime.targets.filter(t => (t instanceof AudioTarget))
     }
+
+    getAudioTargetsRenderingInfo () {
+        var targets = this.getAudioTargets();
+        var info = {}
+        targets.forEach(t => {
+            info[t.id]= t.toJSON();
+        })
+        return info
+    }
 }
 
 module.exports = VirtualMachine;
