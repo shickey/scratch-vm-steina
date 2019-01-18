@@ -208,6 +208,35 @@ class VideoTarget extends Target {
     }
   }
 
+  duplicate () {
+    var newTarget = new VideoTarget(this.runtime); // We purposefully don't provide an id here and
+                                                   // instead overwrite it after duplication so that
+                                                   // this method matches the signature of the standard
+                                                   // sprite duplication method
+
+    newTarget.x = Math.random() * 400 / 2; // These match the implementation for standard sprites
+    newTarget.y = Math.random() * 300 / 2;
+    newTarget.direction = this.direction;
+    newTarget.visible = this.visible;
+    newTarget.size = this.size;
+    newTarget.effects = JSON.parse(JSON.stringify(this.effects))
+
+    // Video specific state
+    newTarget.fps = this.fps;
+    newTarget.frames = this.frames;
+    newTarget.currentFrame = this.currentFrame;
+    newTarget.playbackRate = this.playbackRate;
+
+    newTarget.runtimeVideoState = this.runtime.videoState;
+
+    // Copy blocks, vars, etc.
+    newTarget.blocks = this.blocks.duplicate();
+    newTarget.variables = JSON.parse(JSON.stringify(this.variables));
+    newTarget.lists = JSON.parse(JSON.stringify(this.lists));
+
+    return newTarget;
+  }
+
 }
 
 module.exports = VideoTarget;

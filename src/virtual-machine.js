@@ -1128,6 +1128,18 @@ class VirtualMachine extends EventEmitter {
         return this.editingTarget.id;
     }
 
+    duplicateVideoOrAudioTarget(id, newId) {
+        var target = vm.runtime.getTargetById(id);
+        var newTarget = target.duplicate()
+        newTarget.id = newId;
+        if (newTarget instanceof VideoTarget) {
+            this.insertVideoTarget(newTarget)
+        }
+        else {
+            this.insertAudioTarget(newTarget)
+        }
+    }
+
     getVideoTargets () {
         var order = this.runtime.videoState.order;
         return this.runtime.targets.filter(t => (t instanceof VideoTarget)).sort( (a, b) => {

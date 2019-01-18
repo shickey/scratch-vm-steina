@@ -55,6 +55,27 @@ class AudioTarget extends Target {
     }
   }
 
+  duplicate () {
+    var newTarget = new AudioTarget(this.runtime); // We purposefully don't provide an id here and
+                                                   // instead overwrite it after duplication so that
+                                                   // this method matches the signature of the standard
+                                                   // sprite duplication method
+
+    newTarget.volume = this.volume;
+
+    // Audio specific state
+    newTarget.totalSamples = this.totalSamples;
+    newTarget.sampleRate = this.sampleRate;
+    newTarget.markers = JSON.parse(JSON.stringify(this.markers))
+
+    // Copy blocks, vars, etc.
+    newTarget.blocks = this.blocks.duplicate();
+    newTarget.variables = JSON.parse(JSON.stringify(this.variables));
+    newTarget.lists = JSON.parse(JSON.stringify(this.lists));
+
+    return newTarget;
+  }
+
 }
 
 module.exports = AudioTarget;
