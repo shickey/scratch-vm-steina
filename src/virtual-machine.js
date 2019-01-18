@@ -1100,6 +1100,34 @@ class VirtualMachine extends EventEmitter {
         this.setEditingTarget(target.id);
     }
 
+    deleteVideoOrAudioTarget (targetId) {
+        const target = this.runtime.getTargetById(targetId);
+
+        if (target) {
+            const targetIndexBeforeDelete = this.runtime.targets.map(t => t.id).indexOf(target.id);
+            this.runtime.requestRemoveMonitorByTargetId(targetId);
+            const currentEditingTarget = this.editingTarget;
+
+            this.runtime.stopForTarget(target);
+            this.runtime.disposeTarget(target);
+
+            if (target === currentEditingTarget) {
+                const nextTargetIndex = Math.min(this.runtime.targets.length - 1, targetIndexBeforeDelete);
+                if (this.runtime.targets.length > 0){
+                    this.setEditingTarget(this.runtime.targets[nextTargetIndex].id);
+                } else {
+                    this.editingTarget = null;
+                }
+            }
+
+            this.emitTargetsUpdate();
+        } else {
+            throw new Error('No target with the provided id.');
+        }
+
+        return this.editingTarget.id;
+    }
+
     getVideoTargets () {
         var order = this.runtime.videoState.order;
         return this.runtime.targets.filter(t => (t instanceof VideoTarget)).sort( (a, b) => {
