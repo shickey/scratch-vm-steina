@@ -407,7 +407,7 @@ class SteinaBlocks {
 
     _buildMarkersMenu(targetId) {
         var target = this.runtime.getTargetById(targetId);
-        if (target.hasOwnProperty('markers')) {
+        if (target && target.hasOwnProperty('markers')) {
             var markers = target.markers;
             var menuItems = [
                 {
