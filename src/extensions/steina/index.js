@@ -67,7 +67,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.playEntireVideoUntilDone',
-                        default: 'play entire video and wait',
+                        default: 'play entire video until done',
                         description: 'plays the entire video at 100% playback rate from the first frame ' +
                                      'until reaching the last frame'
                     })
@@ -126,7 +126,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.playNFrames',
-                        default: 'play [FRAMES] frames and wait',
+                        default: 'play [FRAMES] frames until done',
                         description: 'plays FRAMES frames at the current playback rate ' +
                                      'blocking the thread until completion'
                     }),
@@ -142,7 +142,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.playForwardUntilDone',
-                        default: 'play forward and wait',
+                        default: 'play forward until done',
                         description: 'plays the video at the absolute value of the playback rate ' +
                                      'from the current frame until reaching the last frame'
                     })
@@ -152,7 +152,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.playBackwardUntilDone',
-                        default: 'play backward and wait',
+                        default: 'play backward until done',
                         description: 'plays the video at the negative absolute value of the playback rate ' +
                                      'from the current frame until reaching the first frame'
                     })
@@ -270,7 +270,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.audio.playSound',
-                        default: 'play sound and wait',
+                        default: 'play sound until done',
                         description: 'plays the entire sound while blocking execution'
                     })
                 },
@@ -279,7 +279,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.audio.startSoundFromAToB',
-                        default: 'play sound from [MARKER_A] to [MARKER_B]',
+                        default: 'start sound from [MARKER_A] to [MARKER_B]',
                         description: 'plays the sound between two markers without blocking'
                     }),
                     arguments: {
@@ -298,7 +298,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.audio.playSoundFromAToB',
-                        default: 'play sound from [MARKER_A] to [MARKER_B] and wait',
+                        default: 'play sound from [MARKER_A] to [MARKER_B] until done',
                         description: 'plays the sound between two markers while blocking execution'
                     }),
                     arguments: {
