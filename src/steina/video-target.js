@@ -53,10 +53,6 @@ class VideoTarget extends Target {
   // Functions from RenderedTarget
   setXY (x, y, force) {
     if (this.dragging && !force) return;
-    if (this.dragging) {
-      this.x = x + this.dragOffsetX;
-      this.y = y + this.dragOffsetY;
-    }
     else {
       this.x = x;
       this.y = y;

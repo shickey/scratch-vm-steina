@@ -1150,6 +1150,12 @@ class VirtualMachine extends EventEmitter {
     updateDrag(dragInfo) {
         if (!this._dragTarget) return;
         this._dragTarget.setXY(dragInfo.x, dragInfo.y, true);
+        if (!!dragInfo.rot) {
+            this._dragTarget.setDirection(dragInfo.rot)
+        }
+        if (!!dragInfo.scale) {
+            this._dragTarget.setSize(dragInfo.scale)
+        }
     }
 
     createAudioTarget (id, audioInfo) {
