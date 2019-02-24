@@ -412,7 +412,7 @@ class SteinaBlocks {
             var menuItems = [
                 {
                     text: 'start',
-                    value: '0'
+                    value: target.trimStart.toString()
                 }
             ];
 
@@ -426,7 +426,7 @@ class SteinaBlocks {
 
             menuItems.push({
                 text: 'end',
-                value: target.totalSamples.toString()
+                value: target.trimEnd.toString()
             });
 
             return menuItems;
@@ -636,7 +636,7 @@ class SteinaBlocks {
         // unblocking sounds
         if (target.nonblockingSoundsAvailable > 0) {
             // Just queue the sound and don't yield the thread
-            this._queueSound(util.runtime, target, 0, target.totalSamples - 1, false);
+            this._queueSound(util.runtime, target, target.trimStart, target.trimEnd, false);
             target.nonblockingSoundsAvailable--;
         }
     }
@@ -647,7 +647,7 @@ class SteinaBlocks {
 
         if (!util.stackFrame.playingId) {
             // Add the new sound to the play queue
-            var id = this._queueSound(util.runtime, target, 0, target.totalSamples - 1);
+            var id = this._queueSound(util.runtime, target, target.trimStart, target.trimEnd);
 
             util.stackFrame.playingId = id;
         }

@@ -25,12 +25,16 @@ class AudioTarget extends Target {
     this.totalSamples = 0;
     this.sampleRate = 48000;
     this.markers = [];
+    this.trimStart = 0;
+    this.trimEnd = 0;
     this.nonblockingSoundsAvailable = AudioTarget.MAX_SIMULTANEOUS_NONBLOCKING_SOUNDS;
 
     if (!!audioInfo) {
       this.totalSamples = audioInfo.totalSamples || 0;
       this.sampleRate = audioInfo.sampleRate || 48000;
       this.markers = audioInfo.markers || [];
+      this.trimStart = audioInfo.trimStart || 0;
+      this.trimEnd = audioInfo.trimEnd || this.totalSamples;
     }
   }
 
@@ -51,7 +55,9 @@ class AudioTarget extends Target {
       variables: this.variables,
       lists: this.lists,
 
-      markers: this.markers
+      markers: this.markers,
+      trimStart: this.trimStart,
+      trimEnd: this.trimEnd
     }
   }
 
@@ -67,6 +73,8 @@ class AudioTarget extends Target {
     newTarget.totalSamples = this.totalSamples;
     newTarget.sampleRate = this.sampleRate;
     newTarget.markers = JSON.parse(JSON.stringify(this.markers))
+    newTarget.trimStart = this.trimStart;
+    newTarget.trimEnd = this.trimEnd;
 
     // Copy blocks, vars, etc.
     newTarget.blocks = this.blocks.duplicate();
