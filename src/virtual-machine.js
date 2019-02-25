@@ -1174,6 +1174,9 @@ class VirtualMachine extends EventEmitter {
             }
             target[key] = targetObj[key];
         }
+        if (!('trimEnd' in targetObj) || (targetObj.trimEnd == 0)) {
+            target.trimEnd = target.totalSamples;
+        }
         this.insertAudioTarget(target);
     }
 
