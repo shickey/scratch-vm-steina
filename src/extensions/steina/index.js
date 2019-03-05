@@ -284,11 +284,11 @@ class SteinaBlocks {
                     }),
                     arguments: {
                         MARKER_A: {
-                            type: ArgumentType.NUMBER,
+                            type: ArgumentType.STRING,
                             menu: 'markers'
                         },
                         MARKER_B: {
-                            type: ArgumentType.NUMBER,
+                            type: ArgumentType.STRING,
                             menu: 'markers'
                         }
                     }
@@ -303,11 +303,11 @@ class SteinaBlocks {
                     }),
                     arguments: {
                         MARKER_A: {
-                            type: ArgumentType.NUMBER,
+                            type: ArgumentType.STRING,
                             menu: 'markers'
                         },
                         MARKER_B: {
-                            type: ArgumentType.NUMBER,
+                            type: ArgumentType.STRING,
                             menu: 'markers'
                         }
                     }
