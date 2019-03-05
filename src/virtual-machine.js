@@ -1087,6 +1087,9 @@ class VirtualMachine extends EventEmitter {
             }
             target[key] = targetObj[key];
         }
+        if (!('trimEnd' in targetObj) || (targetObj.trimEnd == 0)) {
+            target.trimEnd = target.frames - 1;
+        }
         this.insertVideoTarget(target, false);
     }
 
@@ -1098,6 +1101,17 @@ class VirtualMachine extends EventEmitter {
         this.emitTargetsUpdate();
         this.emitWorkspaceUpdate();
         this.setEditingTarget(target.id);
+    }
+
+    updateVideoTargetInfo (targetId, videoInfo) {
+        const target = this.runtime.getTargetById(targetId);
+
+        if (target) {
+            target.markers = videoInfo.markers || target.markers;
+            target.trimStart = videoInfo.trimStart || target.trimStart;
+            target.trimEnd = videoInfo.trimEnd || target.trimEnd;
+            target.setCurrentFrame(target.currentFrame); // Clamp the current frame to the new trimmed bounds
+        }
     }
 
     deleteVideoOrAudioTarget (targetId) {

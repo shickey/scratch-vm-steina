@@ -451,13 +451,13 @@ class SteinaBlocks {
             //        argument available on the block?
             var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * target.fps);
             var nextFrame = target.currentFrame + frameIncrement;
-            if (nextFrame < 0) {
-                target.setCurrentFrame(0);
+            if (nextFrame < target.trimStart) {
+                target.setCurrentFrame(target.trimStart);
                 util.stackFrame.playing = false;
                 return;
             }
-            else if (nextFrame >= (target.frames - 1)) {
-                target.setCurrentFrame(target.frames - 1);
+            else if (nextFrame >= target.trimEnd) {
+                target.setCurrentFrame(target.trimEnd);
                 util.stackFrame.playing = false;
                 return;
             }
@@ -466,7 +466,7 @@ class SteinaBlocks {
         }
         else {
             util.stackFrame.playing = true;
-            target.setCurrentFrame(0);
+            target.setCurrentFrame(target.trimStart);
             thread.status = Thread.STATUS_YIELD_TICK;
         }
     }
@@ -489,7 +489,8 @@ class SteinaBlocks {
 
     goToFrame(args, util) {
         // Frames are 1-indexed in the blocks, but 0-indexed in the target
-        util.target.setCurrentFrame(args.FRAME - 1);
+        var target = util.target;
+        target.setCurrentFrame((args.FRAME - target.trimStart) - 1);
     }
 
     playNFrames(args, util) {
@@ -512,7 +513,7 @@ class SteinaBlocks {
             if (target.playbackRate < 0) {
                 framesToPlay *= -1.0
             }
-            var targetFrame = MathUtil.clamp(target.currentFrame + framesToPlay, 0, target.frames - 1);
+            var targetFrame = MathUtil.clamp(target.currentFrame + framesToPlay, target.trimStart, target.trimEnd);
             util.stackFrame.playing = true;
             util.stackFrame.targetFrame = targetFrame;
             thread.status = Thread.STATUS_YIELD_TICK;
@@ -535,7 +536,7 @@ class SteinaBlocks {
         }
         else {
             util.stackFrame.playing = true;
-            util.stackFrame.targetFrame = target.frames - 1;
+            util.stackFrame.targetFrame = target.trimEnd;
             thread.status = Thread.STATUS_YIELD_TICK;
         }
     }
@@ -556,7 +557,7 @@ class SteinaBlocks {
         }
         else {
             util.stackFrame.playing = true;
-            util.stackFrame.targetFrame = 0;
+            util.stackFrame.targetFrame = target.trimStart;
             thread.status = Thread.STATUS_YIELD_TICK;
         }
     }
@@ -591,7 +592,7 @@ class SteinaBlocks {
 
     whenPlayedToEnd(args, util) {
         var target = util.target;
-        if (target.currentFrame == target.frames - 1) {
+        if (target.currentFrame == target.trimEnd) {
             return true;
         }
         return false;
@@ -599,7 +600,7 @@ class SteinaBlocks {
 
     whenPlayedToBeginning(args, util) {
         var target = util.target;
-        if (target.currentFrame == 0) {
+        if (target.currentFrame == target.trimStart) {
             return true;
         }
         return false;
@@ -617,11 +618,12 @@ class SteinaBlocks {
     getCurrentFrame(args, util) {
         // @TODO: Should this return an integer or a float? We're going with integer for now
         var target = util.target;
-        return +(target.currentFrame) + 1; // 1-indexed
+        return +(target.currentFrame - target.trimStart) + 1; // 1-indexed
     }
 
     getTotalFrames(args, util) {
-        return util.target.frames;
+        var target = util.target
+        return target.trimEnd - target.trimStart;
     }
 
     getPlayRate(args, util) {

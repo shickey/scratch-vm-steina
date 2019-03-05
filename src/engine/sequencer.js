@@ -171,15 +171,15 @@ class Sequencer {
             let target = this.runtime.getTargetById(targetId);
             var frameIncrement = ((this.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
             var nextFrame = target.currentFrame + frameIncrement;
-            if (nextFrame <= 0) {
-                target.setCurrentFrame(0);
+            if (nextFrame <= target.trimStart) {
+                target.setCurrentFrame(target.trimStart);
                 target.playing = false; // We purposefully don't use the accessor here
                                         // since that would try to remove the video from
                                         // the play queue immediately
                 doneVideoIds.push(targetId);
             }
-            else if (nextFrame >= (target.frames - 1)) {
-                target.setCurrentFrame(target.frames - 1);
+            else if (nextFrame >= target.trimEnd) {
+                target.setCurrentFrame(target.trimEnd);
                 target.playing = false;
                 doneVideoIds.push(targetId);
             }

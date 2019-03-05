@@ -41,12 +41,19 @@ class VideoTarget extends Target {
     this.frames = 0;
     this.currentFrame = 0;
     this.playbackRate = 100;
+    this.markers = [];
+    this.trimStart = 0;
+    this.trimEnd = 0;
 
     this.runtimeVideoState = runtime.videoState;
 
     if (!!videoInfo) {
       this.fps = videoInfo.fps;
       this.frames = videoInfo.frames;
+      this.markers = videoInfo.markers || [];
+      this.trimStart = videoInfo.trimStart || 0;
+      this.trimEnd = videoInfo.trimEnd || this.frames - 1;
+      this.currentFrame = this.trimStart
     }
   }
 
@@ -177,7 +184,7 @@ class VideoTarget extends Target {
   }
 
   setCurrentFrame (frame) {
-    this.currentFrame = MathUtil.clamp(frame, 0, this.frames - 1);
+    this.currentFrame = MathUtil.clamp(frame, this.trimStart, this.trimEnd);
     this.runtime.requestRedraw();
   }
 
@@ -200,7 +207,10 @@ class VideoTarget extends Target {
       fps: this.fps,
       frames: this.frames,
       currentFrame: this.currentFrame,
-      playbackRate: this.playbackRate
+      playbackRate: this.playbackRate,
+      markers: this.markers,
+      trimStart: this.trimStart,
+      trimEnd: this.trimEnd
     }
   }
 
@@ -222,6 +232,9 @@ class VideoTarget extends Target {
     newTarget.frames = this.frames;
     newTarget.currentFrame = this.currentFrame;
     newTarget.playbackRate = this.playbackRate;
+    newTarget.markers = this.markers,
+    newTarget.trimStart = this.trimStart,
+    newTarget.trimEnd = this.trimEnd
 
     newTarget.runtimeVideoState = this.runtime.videoState;
 
