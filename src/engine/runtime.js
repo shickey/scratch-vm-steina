@@ -269,7 +269,7 @@ class Runtime extends EventEmitter {
         // the current frame for each video during each tick
         this.videoState = {
           order : [], // Array of target ids
-          playing: []
+          playing: {}
         };
 
         // @NOTE (sean):

@@ -36,7 +36,6 @@ class VideoTarget extends Target {
 
     // Video specific state
     this.tapped = false;
-    this.playing = false;
     this.fps = 30.0;
     this.frames = 0;
     this.currentFrame = 0;
@@ -159,27 +158,9 @@ class VideoTarget extends Target {
 
   // Video functions
 
-  // Sets the video play state
-  // If set to true, the video will begin playing without blocking the thread
-  setPlaying (playing) {
-    if (this.playing === !!playing) { return; }
-    
-    this.playing = !!playing
-    if (this.playing) {
-      this.runtimeVideoState.playing.push(this.id)
-    }
-    else {
-      let idx = this.runtimeVideoState.playing.indexOf(this.id)
-      if (idx !== -1) {
-        this.runtimeVideoState.playing.splice(idx, 1);
-      }
-    }
-    this.runtime.requestRedraw();
-  }
-
   setRate (rate) {
     // @TODO: Should we clamp this or is it fun to just go nuts with the rate?
-    this.playbackRate = MathUtil.clamp(rate, -1000, 1000);
+    this.playbackRate = MathUtil.clamp(rate, 0, 1000);
     this.runtime.requestRedraw();
   }
 

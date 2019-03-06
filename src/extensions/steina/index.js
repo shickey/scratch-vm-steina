@@ -38,10 +38,7 @@ class SteinaBlocks {
 
         if (this.runtime) {
             this.runtime.on('PROJECT_STOP_ALL', () => {
-                this.runtime.videoState.playing.forEach( vId => {
-                    let target = this.runtime.getTargetById(vId)
-                    target.setPlaying(false);
-                });
+                this.runtime.videoState.playing = {};
                 this.runtime.audioState.playing = {};
                 this.runtime.targets.forEach(t => {
                     if (t.hasOwnProperty("nonblockingSoundsAvailable")) {
@@ -442,124 +439,126 @@ class SteinaBlocks {
 
     // Video
 
+    _queueVideo(runtime, thread, videoTarget, start, end, blocking) {
+        var id = uid();
+        var playingVideo = {
+            id: id,
+            start: start,
+            end: end,
+            threadTopBlock: thread.topBlock,
+            blocking: blocking
+        };
+
+        // @NOTE(sean): This will overwrite any existing playing video for this target
+        runtime.videoState.playing[videoTarget.id] = playingVideo;
+
+        return id;
+    }
+
     playEntireVideoUntilDone(args, util) {
         var target = util.target;
         var thread = util.thread;
-        if (util.stackFrame.playing) {
-            // We play the video at the normal 100% rate (but we don't change the rate property)
-            // @TODO: Does this make sense? Should we update the rate? Should there be a rate
-            //        argument available on the block?
-            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * target.fps);
-            var nextFrame = target.currentFrame + frameIncrement;
-            if (nextFrame < target.trimStart) {
-                target.setCurrentFrame(target.trimStart);
-                util.stackFrame.playing = false;
-                return;
-            }
-            else if (nextFrame >= target.trimEnd) {
-                target.setCurrentFrame(target.trimEnd);
-                util.stackFrame.playing = false;
-                return;
-            }
-            target.setCurrentFrame(nextFrame);
-            thread.status = Thread.STATUS_YIELD_TICK;
+
+        if (!util.stackFrame.playingId) {
+            target.currentFrame = target.trimStart;
+            var playingId = this._queueVideo(util.runtime, thread, target, target.trimStart, target.trimEnd, true);
+            util.stackFrame.playingId = playingId;
         }
         else {
-            util.stackFrame.playing = true;
-            target.setCurrentFrame(target.trimStart);
-            thread.status = Thread.STATUS_YIELD_TICK;
+            var playingId = util.stackFrame.playingId;
+            var playingVideo = util.runtime.videoState.playing[target.id];
+            if (!playingVideo || playingVideo.id != playingId) {
+                // Either the video ended playing on the last frame
+                // Or another playing video overwrote it since the last frame
+                return;
+            }
         }
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     setPlayRate(args, util) {
-        util.target.setRate(args.RATE);
+        util.target.setRate(+(args.RATE));
     }
 
     startPlaying(args, util) {
         var target = util.target;
-        if (target.playing) { return; }
-        target.setPlaying(true);
+        var thread = util.thread;
+        this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimEnd, false);
     }
 
     stopPlaying(args, util) {
         var target = util.target;
-        if (!target.playing) { return; }
-        target.setPlaying(false);
+        if (target.id in util.runtime.videoState.playing) {
+            delete util.runtime.videoState.playing[target.id];
+        }
     }
 
     goToFrame(args, util) {
         // Frames are 1-indexed in the blocks, but 0-indexed in the target
         var target = util.target;
-        target.setCurrentFrame((args.FRAME - target.trimStart) - 1);
+        target.setCurrentFrame((+(args.FRAME) + target.trimStart) - 1);
     }
 
     playNFrames(args, util) {
         var target = util.target;
         var thread = util.thread;
-        if (util.stackFrame.playing) {
-            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
-            var nextFrame = target.currentFrame + frameIncrement;
-            if ((target.playbackRate < 0 && nextFrame <= util.stackFrame.targetFrame) ||
-                (target.playbackRate >= 0 && nextFrame >= util.stackFrame.targetFrame)) {
-                util.stackFrame.playing = false;
-                target.setCurrentFrame(nextFrame)
-                return;
-            }
-            target.setCurrentFrame(nextFrame)
-            thread.status = Thread.STATUS_YIELD_TICK;
+
+        if (!util.stackFrame.playingId) {
+            var framesToPlay = +(args.FRAMES);
+            var endFrame = MathUtil.clamp(target.currentFrame + framesToPlay, target.trimStart, target.trimEnd);
+            var playingId = this._queueVideo(util.runtime, thread, target, target.currentFrame, endFrame, true);
+            util.stackFrame.playingId = playingId;
         }
         else {
-            var framesToPlay = +(args.FRAMES);
-            if (target.playbackRate < 0) {
-                framesToPlay *= -1.0
+            var playingId = util.stackFrame.playingId;
+            var playingVideo = util.runtime.videoState.playing[target.id];
+            if (!playingVideo || playingVideo.id != playingId) {
+                // Either the video ended playing on the last frame
+                // Or another playing video overwrote it since the last frame
+                return;
             }
-            var targetFrame = MathUtil.clamp(target.currentFrame + framesToPlay, target.trimStart, target.trimEnd);
-            util.stackFrame.playing = true;
-            util.stackFrame.targetFrame = targetFrame;
-            thread.status = Thread.STATUS_YIELD_TICK;
         }
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     playForwardUntilDone(args, util) {
         var target = util.target;
         var thread = util.thread;
-        if (util.stackFrame.playing) {
-            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (Math.abs(target.playbackRate) / 100.0)) * target.fps;
-            var nextFrame = target.currentFrame + frameIncrement;
-            if (nextFrame >= util.stackFrame.targetFrame) {
-                util.stackFrame.playing = false;
-                target.setCurrentFrame(util.stackFrame.targetFrame)
-                return;
-            }
-            target.setCurrentFrame(nextFrame)
-            thread.status = Thread.STATUS_YIELD_TICK;
+
+        if (!util.stackFrame.playingId) {
+            var playingId = this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimEnd, true);
+            util.stackFrame.playingId = playingId;
         }
         else {
-            util.stackFrame.playing = true;
-            util.stackFrame.targetFrame = target.trimEnd;
-            thread.status = Thread.STATUS_YIELD_TICK;
+            var playingId = util.stackFrame.playingId;
+            var playingVideo = util.runtime.videoState.playing[target.id];
+            if (!playingVideo || playingVideo.id != playingId) {
+                // Either the video ended playing on the last frame
+                // Or another playing video overwrote it since the last frame
+                return;
+            }
         }
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     playBackwardUntilDone(args, util) {
         var target = util.target;
         var thread = util.thread;
-        if (util.stackFrame.playing) {
-            var frameIncrement = ((util.runtime.currentStepTime / 1000.0) * (-Math.abs(target.playbackRate) / 100.0)) * target.fps;
-            var nextFrame = target.currentFrame + frameIncrement;
-            if (nextFrame <= util.stackFrame.targetFrame) {
-                util.stackFrame.playing = false;
-                target.setCurrentFrame(util.stackFrame.targetFrame)
-                return;
-            }
-            target.setCurrentFrame(nextFrame)
-            thread.status = Thread.STATUS_YIELD_TICK;
+
+        if (!util.stackFrame.playingId) {
+            var playingId = this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimStart, true);
+            util.stackFrame.playingId = playingId;
         }
         else {
-            util.stackFrame.playing = true;
-            util.stackFrame.targetFrame = target.trimStart;
-            thread.status = Thread.STATUS_YIELD_TICK;
+            var playingId = util.stackFrame.playingId;
+            var playingVideo = util.runtime.videoState.playing[target.id];
+            if (!playingVideo || playingVideo.id != playingId) {
+                // Either the video ended playing on the last frame
+                // Or another playing video overwrote it since the last frame
+                return;
+            }
         }
+        thread.status = Thread.STATUS_YIELD_TICK;
     }
 
     nextFrame(args, util) {

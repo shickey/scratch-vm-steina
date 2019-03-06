@@ -162,35 +162,43 @@ class Sequencer {
         doneThreads.length = numDoneThreads;
 
         // @NOTE (sean):
-        // Here's where we update the current frame for any videos
-        // that are current playing in a non-blocking way.
-        var playingVideoIds = this.runtime.videoState.playing;
+        // Update state for playing videos
+        var playingVideos = this.runtime.videoState.playing;
         var doneVideoIds = [];
-        for (let i = 0; i < playingVideoIds.length; ++i) {
-            let targetId = playingVideoIds[i];
-            let target = this.runtime.getTargetById(targetId);
-            var frameIncrement = ((this.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
-            var nextFrame = target.currentFrame + frameIncrement;
-            if (nextFrame <= target.trimStart) {
-                target.setCurrentFrame(target.trimStart);
-                target.playing = false; // We purposefully don't use the accessor here
-                                        // since that would try to remove the video from
-                                        // the play queue immediately
-                doneVideoIds.push(targetId);
+        for (var videoTargetId in playingVideos) {
+            var target = this.runtime.getTargetById(videoTargetId);
+            var playingVideo = playingVideos[videoTargetId];
+
+            // If the playingVideo is thread-blocking, check to see if the thread still exists/should continue executing
+            if (playingVideo.blocking) {
+                var thread = this.runtime.threads.find((t) => t.topBlock == playingVideo.threadTopBlock)
+                if (!thread || thread.isKilled) {
+                    doneVideoIds.push(videoTargetId);
+                    continue;
+                }
             }
-            else if (nextFrame >= target.trimEnd) {
-                target.setCurrentFrame(target.trimEnd);
-                target.playing = false;
-                doneVideoIds.push(targetId);
+
+            var frameIncrement = ((this.runtime.currentStepTime / 1000.0) * (target.playbackRate / 100.0)) * target.fps;
+
+            if (playingVideo.end < playingVideo.start) {
+                frameIncrement *= -1.0;
+            }
+
+            var nextFrame = target.currentFrame + frameIncrement;
+
+            if ((frameIncrement < 0 && nextFrame <= playingVideo.end)
+                || (frameIncrement > 0 && nextFrame >= playingVideo.end)) {
+                target.setCurrentFrame(playingVideo.end);
+                doneVideoIds.push(videoTargetId);
             }
             else {
                 target.setCurrentFrame(nextFrame);
             }
         }
 
-        this.runtime.videoState.playing = playingVideoIds.filter( id => {
-            // Remove all videos that have been added to the doneVideoIds array
-            return (doneVideoIds.indexOf(id) === -1)
+        doneVideoIds.forEach( id => {
+            var playingVideoToDelete = playingVideos[id];
+            delete this.runtime.videoState.playing[id];
         })
 
         // @NOTE (sean):
