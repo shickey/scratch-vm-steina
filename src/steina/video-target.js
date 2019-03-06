@@ -138,6 +138,7 @@ class VideoTarget extends Target {
   }
 
   stopDrag() {
+    this.tapped = false;
     this.dragging = false;
   }
 

@@ -16,6 +16,11 @@ const Cast = require('../../util/cast');
 // eslint-disable-next-line max-len
 // const blockIconURI = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSI1MTJweCIgaGVpZ2h0PSI1MTJweCIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDUxMiA1MTI7IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNMzAzLjcsMTI4aC0yMjFDNjMuOSwxMjgsNDcsMTQyLjEsNDcsMTYwLjd2MTg3LjljMCwxOC42LDE2LjksMzUuNCwzNS43LDM1LjRoMjIxYzE4LjgsMCwzMy4zLTE2LjgsMzMuMy0zNS40VjE2MC43QzMzNywxNDIuMSwzMjIuNSwxMjgsMzAzLjcsMTI4eiIvPjxwYXRoIGQ9Ik0zNjcsMjEzdjg1LjZsOTgsNTMuNFYxNjBMMzY3LDIxM3oiLz48L2c+PC9zdmc+';
 
+const VideoDirections = {
+    FORWARD: "forward",
+    REVERSE: "reverse"
+}
+
 const VideoEffects = {
     COLOR: "color",
     WHIRL: "whirl",
@@ -64,9 +69,40 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.playEntireVideoUntilDone',
-                        default: 'play entire video until done',
-                        description: 'plays the entire video at 100% playback rate from the first frame ' +
+                        default: 'play from start to end',
+                        description: 'plays the entire video at current playback rate from the first frame ' +
                                      'until reaching the last frame'
+                    })
+                },
+                {
+                    opcode: 'playVideoFromAToB',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.playVideoFromAToB',
+                        default: 'play from [MARKER_A] to [MARKER_B]',
+                        description: 'plays the video at current playback rate from the first marker argument ' +
+                                     'until the second marker argument'
+                    })
+                },
+                {
+                    opcode: 'playForwardReverseUntilDone',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.playForwardReverseUntilDone',
+                        default: 'play [DIRECTION]',
+                        description: 'plays the video at current playback rate from the current frame ' +
+                                     'until reaching either the final frame (forward) or the first frame (reverse) ' +
+                                     'while blocking the execution thread'
+                    })
+                },
+                {
+                    opcode: 'startPlayingForwardReverse',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.startPlayingForwardReverse',
+                        default: 'start playing [DIRECTION]',
+                        description: 'plays the video at current playback rate from the current frame ' +
+                                     'until reaching either the final frame (forward) or the first frame (reverse)'
                     })
                 },
                 {
@@ -91,7 +127,7 @@ class SteinaBlocks {
                         id: 'steina.video.startPlaying',
                         default: 'start playing video',
                         description: 'plays the video at the current rate wihtout blocking the thread ' +
-                                     'until reaching the end (or beginning if the rate is negative)'
+                                     'until reaching the end'
                     })
                 },
                 {
@@ -99,7 +135,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.stopPlaying',
-                        default: 'stop playing video',
+                        default: 'stop playing',
                         description: 'stops the video at the current frame, if necessary'
                     })
                 },
@@ -108,7 +144,7 @@ class SteinaBlocks {
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
                         id: 'steina.video.goToFrame',
-                        default: 'go to frame [FRAME]',
+                        default: 'jump to frame [FRAME]',
                         description: 'sets the current video frame'
                     }),
                     arguments: {
@@ -222,6 +258,21 @@ class SteinaBlocks {
                     })
                 },
                 {
+                    opcode: 'whenReached',
+                    blockType: BlockType.HAT,
+                    text: formatMessage({
+                        id: 'steina.video.whenReached',
+                        default: 'when I reach [MARKER]',
+                        description: 'triggers when the video is playing and passes/reaches the specified marker or start/end point'
+                    }),
+                    arguments: {
+                        MARKER: {
+                            type: ArgumentType.STRING,
+                            menu: 'markers'
+                        }
+                    }
+                },
+                {
                     opcode: 'whenPlayedToEnd',
                     text: 'when played to end',
                     blockType: BlockType.HAT
@@ -250,6 +301,12 @@ class SteinaBlocks {
                     opcode: 'getPlayRate',
                     text: 'play rate',
                     blockType: BlockType.REPORTER
+                },
+
+                {
+                    opcode: 'isTapped',
+                    text: 'tapped?',
+                    blockType: BlockType.BOOLEAN
                 },
 
                 // Audio
@@ -346,6 +403,24 @@ class SteinaBlocks {
                 }
             ],
             menus: {
+                directions: [
+                    {
+                        text: formatMessage({
+                            id: 'steina.video.videoDirectionMenu.forward',
+                            default: 'forward',
+                            description: 'label for playing a video in the forward direction'
+                        }),
+                        value: VideoDirections.FORWARD
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.video.videoDirectionMenu.reverse',
+                            default: 'in reverse',
+                            description: 'label for playing a video in the reverse direction'
+                        }),
+                        value: VideoDirections.REVERSE
+                    }
+                ],
                 effects: [
                     {
                         text: formatMessage({
@@ -476,6 +551,70 @@ class SteinaBlocks {
         thread.status = Thread.STATUS_YIELD_TICK;
     }
 
+    playVideoFromAToB(args, util) {
+        var target = util.target;
+        var thread = util.thread;
+
+        var start = +(args.MARKER_A);
+        var end = +(args.MARKER_B);
+
+        if (!util.stackFrame.playingId) {
+            target.currentFrame = start;
+            var playingId = this._queueVideo(util.runtime, thread, target, start, end, true);
+            util.stackFrame.playingId = playingId;
+        }
+        else {
+            var playingId = util.stackFrame.playingId;
+            var playingVideo = util.runtime.videoState.playing[target.id];
+            if (!playingVideo || playingVideo.id != playingId) {
+                // Either the video ended playing on the last frame
+                // Or another playing video overwrote it since the last frame
+                return;
+            }
+        }
+        thread.status = Thread.STATUS_YIELD_TICK;
+    }
+
+    playForwardReverseUntilDone(args, util) {
+        var target = util.target;
+        var thread = util.thread;
+
+        if (!util.stackFrame.playingId) {
+            var direction = args.DIRECTION;
+            if (direction == VideoDirections.FORWARD) {
+                var playingId = this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimEnd, true);
+                util.stackFrame.playingId = playingId;
+            }
+            else {
+                var playingId = this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimStart, true);
+                util.stackFrame.playingId = playingId;
+            }
+        }
+        else {
+            var playingId = util.stackFrame.playingId;
+            var playingVideo = util.runtime.videoState.playing[target.id];
+            if (!playingVideo || playingVideo.id != playingId) {
+                // Either the video ended playing on the last frame
+                // Or another playing video overwrote it since the last frame
+                return;
+            }
+        }
+        thread.status = Thread.STATUS_YIELD_TICK;
+    }
+
+    startPlayingForwardReverse(args, util) {
+        var target = util.target;
+        var thread = util.thread;
+
+        var direction = args.DIRECTION;
+        if (direction == VideoDirections.FORWARD) {
+            this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimEnd, false);
+        }
+        else {
+            this._queueVideo(util.runtime, thread, target, target.currentFrame, target.trimStart, false);
+        }
+    }
+
     setPlayRate(args, util) {
         util.target.setRate(+(args.RATE));
     }
@@ -571,6 +710,11 @@ class SteinaBlocks {
         target.setCurrentFrame(target.currentFrame - 1);
     }
 
+    isTapped(args, util) {
+        var target = util.target;
+        return target.tapped;
+    }
+
     changeEffectBy(args, util) {
         const effect = Cast.toString(args.EFFECT).toLowerCase();
         const change = Cast.toNumber(args.CHANGE);
@@ -605,13 +749,16 @@ class SteinaBlocks {
         return false;
     }
 
+    whenReached(args, util) {
+        var target = util.target;
+        var marker = args.MARKER;
+
+        return marker == target.currentFrame;
+    }
+
     whenTapped(args, util) {
         var target = util.target;
-        if (target.tapped) {
-            target.tapped = false;
-            return true;
-        }
-        return false;
+        return target.tapped;
     }
 
     getCurrentFrame(args, util) {
