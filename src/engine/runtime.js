@@ -276,7 +276,15 @@ class Runtime extends EventEmitter {
         // We do a similar thing for audio here
         this.audioState = {
             playing: {}
-        }
+        };
+
+        // @NOTE (sean):
+        // Holds global state of device motion values
+        this.motion = {
+            roll: 0.0,     // Left-right tilt axis. Tilting to the right is positive.
+            pitch: 0.0,    // Forward-backward tilt axis. Tilting forward is positive.
+            heading: 0.0   // Approximate compass direction. 0.0 is north, 90.0 is east
+        };
 
     }
 

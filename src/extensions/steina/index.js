@@ -17,16 +17,34 @@ const Cast = require('../../util/cast');
 // const blockIconURI = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSI1MTJweCIgaGVpZ2h0PSI1MTJweCIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDUxMiA1MTI7IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNMzAzLjcsMTI4aC0yMjFDNjMuOSwxMjgsNDcsMTQyLjEsNDcsMTYwLjd2MTg3LjljMCwxOC42LDE2LjksMzUuNCwzNS43LDM1LjRoMjIxYzE4LjgsMCwzMy4zLTE2LjgsMzMuMy0zNS40VjE2MC43QzMzNywxNDIuMSwzMjIuNSwxMjgsMzAzLjcsMTI4eiIvPjxwYXRoIGQ9Ik0zNjcsMjEzdjg1LjZsOTgsNTMuNFYxNjBMMzY3LDIxM3oiLz48L2c+PC9zdmc+';
 
 const VideoDirections = {
-    FORWARD: "forward",
-    REVERSE: "reverse"
-}
+    FORWARD: 'forward',
+    REVERSE: 'reverse'
+};
 
 const VideoEffects = {
-    COLOR: "color",
-    WHIRL: "whirl",
-    CRYSTALLIZE: "crystallize",
-    KALEIDOSCOPE: "kaleidoscope"
+    COLOR:        'color',
+    WHIRL:        'whirl',
+    CRYSTALLIZE:  'crystallize',
+    KALEIDOSCOPE: 'kaleidoscope'
+};
+
+const TiltDirections = {
+    LEFT:     'left',
+    RIGHT:    'right',
+    FORWARD:  'forward',
+    BACKWARD: 'backward',
+    // ANY: 'any'
+};
+
+const CardinalDirections = {
+    NORTH: 'north',
+    SOUTH: 'south',
+    EAST:  'east',
+    WEST:  'west'
 }
+
+const TILT_THRESHOLD = 15.0;
+const COMPASS_THRESHOLD = 20.0; // 10 degrees on either side
 
 /**
  * Host for the video and audio-related blocks in Steina
@@ -400,7 +418,98 @@ class SteinaBlocks {
                     opcode: 'getVolume',
                     text: 'volume',
                     blockType: BlockType.REPORTER
-                }
+                },
+
+                // Motion
+                {
+                    opcode: 'whenTilted',
+                    text: formatMessage({
+                        id: 'steina.motion.whenTilted',
+                        default: 'when tilted [DIRECTION]',
+                        description: 'when the device is tilted in a direction'
+                    }),
+                    blockType: BlockType.HAT,
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'tiltDirection',
+                            defaultValue: TiltDirections.RIGHT
+                        }
+                    }
+                },
+                {
+                    opcode: 'isTilted',
+                    text: formatMessage({
+                        id: 'steina.motion.isTilted',
+                        default: 'tilted [DIRECTION]?',
+                        description: 'is the device is tilted in a direction?'
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'tiltDirection',
+                            defaultValue: TiltDirections.RIGHT
+                        }
+                    }
+                },
+                {
+                    opcode: 'getTiltAngle',
+                    text: formatMessage({
+                        id: 'steina.motion.tiltAngle',
+                        default: 'tilt angle [DIRECTION]',
+                        description: 'how much the device is tilted in a direction'
+                    }),
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'tiltDirection',
+                            defaultValue: TiltDirections.RIGHT
+                        }
+                    }
+                },
+                {
+                    opcode: 'whenPointed',
+                    text: formatMessage({
+                        id: 'steina.motion.whenPointed',
+                        default: 'when pointed toward [DIRECTION]',
+                        description: 'when the device is rotated toward a cardinal direction'
+                    }),
+                    blockType: BlockType.HAT,
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'cardinalDirections',
+                            defaultValue: CardinalDirections.NORTH
+                        }
+                    }
+                },
+                {
+                    opcode: 'isPointed',
+                    text: formatMessage({
+                        id: 'steina.motion.isPointed',
+                        default: 'pointed [DIRECTION]?',
+                        description: 'is the device is pointed toward a cardinal direction?'
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'cardinalDirections',
+                            defaultValue: CardinalDirections.NORTH
+                        }
+                    }
+                },
+                {
+                    opcode: 'getCompassAngle',
+                    text: formatMessage({
+                        id: 'steina.motion.compassAngle',
+                        default: 'compass angle',
+                        description: 'compass angle where 0.0 means north and 90.0 means east'
+                    }),
+                    blockType: BlockType.REPORTER
+                },
             ],
             menus: {
                 directions: [
@@ -470,6 +579,74 @@ class SteinaBlocks {
                     //     }),
                     //     value: VideoEffects.KALEIDOSCOPE
                     // }
+                ],
+                tiltDirections: [
+                    {
+                        text: formatMessage({
+                            id: 'steina.tiltDirectionMenu.right',
+                            default: 'right',
+                            description: 'label for right element in tilt direction picker'
+                        }),
+                        value: TiltDirections.RIGHT
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.tiltDirectionMenu.left',
+                            default: 'left',
+                            description: 'label for left element in tilt direction picker'
+                        }),
+                        value: TiltDirections.LEFT
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.tiltDirectionMenu.front',
+                            default: 'forward',
+                            description: 'label for forward element in tilt direction picker'
+                        }),
+                        value: TiltDirections.FORWARD
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.tiltDirectionMenu.back',
+                            default: 'backward',
+                            description: 'label for backward element in tilt direction picker'
+                        }),
+                        value: TiltDirections.BACKWARD
+                    }
+                ],
+                cardinalDirections: [
+                    {
+                        text: formatMessage({
+                            id: 'steina.cardinalDirectionMenu.north',
+                            default: 'north',
+                            description: 'label for north element in cardinal direction picker'
+                        }),
+                        value: CardinalDirections.NORTH
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.cardinalDirectionMenu.east',
+                            default: 'east',
+                            description: 'label for east element in cardinal direction picker'
+                        }),
+                        value: CardinalDirections.EAST
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.cardinalDirectionMenu.south',
+                            default: 'south',
+                            description: 'label for south element in cardinal direction picker'
+                        }),
+                        value: CardinalDirections.SOUTH
+                    },
+                    {
+                        text: formatMessage({
+                            id: 'steina.cardinalDirectionMenu.back',
+                            default: 'west',
+                            description: 'label for west element in cardinal direction picker'
+                        }),
+                        value: CardinalDirections.WEST
+                    }
                 ],
                 // markers: this._buildMarkersMenu()
                 markers: '_buildMarkersMenu'
@@ -884,6 +1061,67 @@ class SteinaBlocks {
         runtime.audioState.playing[id] = playingSound;
 
         return id;
+    }
+
+    // Motion
+    getTiltAngle(args, util) {
+        return this._getTiltAngle(args.DIRECTION);
+    }
+
+    whenTilted(args, util) {
+        return this._isTilted(args.DIRECTION);
+    }
+
+    isTilted(args, util) {
+        return this._isTilted(args.DIRECTION);
+    }
+
+    _getTiltAngle(direction) {
+        if (direction == TiltDirections.FORWARD) {
+            return this.runtime.motion.pitch;
+        }
+        else if (direction == TiltDirections.BACKWARD) {
+            return -this.runtime.motion.pitch;
+        }
+        else if (direction == TiltDirections.LEFT) {
+            return -this.runtime.motion.roll;
+        }
+        else if (direction == TiltDirections.RIGHT) {
+            return this.runtime.motion.roll;
+        }
+    }
+
+    _isTilted(direction) {
+        return this._getTiltAngle(direction) >= TILT_THRESHOLD;
+    }
+
+    getCompassAngle(args, util) {
+        return util.runtime.motion.heading;
+    }
+
+    whenPointed(args, util) {
+        return this._isPointed(args.DIRECTION);
+    }
+
+    isPointed(args, util) {
+        return this._isPointed(args.DIRECTION);
+    }
+
+    _isPointed(direction) {
+        var compass = this.runtime.motion.heading;
+        if (direction == CardinalDirections.NORTH) {
+            return compass <= (COMPASS_THRESHOLD / 2.0) ||
+                   compass >= 360.0 - (COMPASS_THRESHOLD / 2.0);
+        }
+        else if (direction == CardinalDirections.SOUTH) {
+            return Math.abs(compass - 180.0) <= COMPASS_THRESHOLD;
+        }
+        else if (direction == CardinalDirections.EAST) {
+            return Math.abs(compass - 90.0) <= COMPASS_THRESHOLD;
+        }
+        else if (direction == CardinalDirections.WEST) {
+            return Math.abs(compass - 270.0) <= COMPASS_THRESHOLD;
+        }
     }
 
 }
