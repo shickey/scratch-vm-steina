@@ -124,21 +124,6 @@ class SteinaBlocks {
                     })
                 },
                 {
-                    opcode: 'setPlayRate',
-                    blockType: BlockType.COMMAND,
-                    text: formatMessage({
-                        id: 'steina.video.setPlayRate',
-                        default: 'set play rate to [RATE] %',
-                        description: 'sets the playback rate of the video as a percentage'
-                    }),
-                    arguments: {
-                        RATE: {
-                            type: ArgumentType.NUMBER,
-                            defaultValue: 100
-                        }
-                    }
-                },
-                {
                     opcode: 'startPlaying',
                     blockType: BlockType.COMMAND,
                     text: formatMessage({
@@ -315,11 +300,6 @@ class SteinaBlocks {
                     text: 'total frames',
                     blockType: BlockType.REPORTER
                 },
-                {
-                    opcode: 'getPlayRate',
-                    text: 'play rate',
-                    blockType: BlockType.REPORTER
-                },
 
                 {
                     opcode: 'isTapped',
@@ -417,6 +397,43 @@ class SteinaBlocks {
                 {
                     opcode: 'getVolume',
                     text: 'volume',
+                    blockType: BlockType.REPORTER
+                },
+
+                // Shared Audio and Video
+                {
+                    opcode: 'setPlayRate',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.setPlayRate',
+                        default: 'set play rate to [RATE] %',
+                        description: 'sets the playback rate of the asset as a percentage'
+                    }),
+                    arguments: {
+                        RATE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 100
+                        }
+                    }
+                },
+                {
+                    opcode: 'changePlayRateBy',
+                    blockType: BlockType.COMMAND,
+                    text: formatMessage({
+                        id: 'steina.video.changeRateBy',
+                        default: 'change play rate by [RATE]',
+                        description: 'changes the playback rate by the given value, clamping between 0 and 1000'
+                    }),
+                    arguments: {
+                        VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 10
+                        }
+                    }
+                },
+                {
+                    opcode: 'getPlayRate',
+                    text: 'play rate',
                     blockType: BlockType.REPORTER
                 },
 
@@ -796,6 +813,11 @@ class SteinaBlocks {
         util.target.setRate(+(args.RATE));
     }
 
+    changePlayRateBy(args, util) {
+        var target = util.target;
+        target.setRate(+(target.playbackRate) + +(args.RATE));
+    }
+
     startPlaying(args, util) {
         var target = util.target;
         var thread = util.thread;
@@ -961,7 +983,7 @@ class SteinaBlocks {
         // unblocking sounds
         if (target.nonblockingSoundsAvailable > 0) {
             // Just queue the sound and don't yield the thread
-            this._queueSound(util.runtime, target, target.trimStart, target.trimEnd, false);
+            this._queueSound(util.runtime, target, target.trimStart, target.trimEnd, target.playbackRate, false);
             target.nonblockingSoundsAvailable--;
         }
     }
@@ -972,7 +994,7 @@ class SteinaBlocks {
 
         if (!util.stackFrame.playingId) {
             // Add the new sound to the play queue
-            var id = this._queueSound(util.runtime, target, target.trimStart, target.trimEnd);
+            var id = this._queueSound(util.runtime, target, target.trimStart, target.trimEnd, target.playbackRate);
 
             util.stackFrame.playingId = id;
         }
@@ -993,13 +1015,9 @@ class SteinaBlocks {
         var start = +(args.MARKER_A);
         var end = +(args.MARKER_B);
 
-        if (start >= end) {
-            return;
-        }
-
         if (target.nonblockingSoundsAvailable > 0) {
             // Just queue the sound and don't yield the thread
-            this._queueSound(util.runtime, target, start, end, false);
+            this._queueSound(util.runtime, target, start, end, target.playbackRate, false);
             target.nonblockingSoundsAvailable--;
         }
     }
@@ -1011,13 +1029,9 @@ class SteinaBlocks {
         var start = +(args.MARKER_A);
         var end = +(args.MARKER_B);
 
-        if (start >= end) {
-            return;
-        }
-
         if (!util.stackFrame.playingId) {
             // Add the new sound to the play queue
-            var id = this._queueSound(util.runtime, target, start, end);
+            var id = this._queueSound(util.runtime, target, start, end, target.playbackRate);
 
             util.stackFrame.playingId = id;
         }
@@ -1045,7 +1059,7 @@ class SteinaBlocks {
         return util.target.volume;
     }
 
-    _queueSound(runtime, audioTarget, start, end, blocking = true) {
+    _queueSound(runtime, audioTarget, start, end, playbackRate, blocking = true) {
         var id = uid();
         var firstSample = Math.max(start, 0);
         var lastSample = Math.min(end, audioTarget.totalSamples - 1);
@@ -1054,6 +1068,7 @@ class SteinaBlocks {
             sampleRate: audioTarget.sampleRate,
             start: firstSample,
             end: lastSample,
+            playbackRate: playbackRate,
             prevPlayhead: firstSample,
             playhead: firstSample,
             blocking: blocking

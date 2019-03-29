@@ -214,13 +214,27 @@ class Sequencer {
                 continue;
             }
 
-            var sampleIncrement = (this.runtime.currentStepTime / 1000.0) * sound.sampleRate;
-            var nextPlayhead = sound.playhead + sampleIncrement;
-            if (nextPlayhead > sound.end) {
-                nextPlayhead = sound.end;
+            // Update rate of the playing sound each frame
+            sound.playbackRate = this.runtime.getTargetById(sound.audioTargetId).playbackRate;
+            var sampleIncrement = (this.runtime.currentStepTime / 1000.0) * sound.sampleRate * (sound.playbackRate / 100.0);
+            if (sound.start < sound.end) {
+                var nextPlayhead = sound.playhead + sampleIncrement;
+                if (nextPlayhead > sound.end) {
+                    nextPlayhead = sound.end;
+                }
+                sound.prevPlayhead = sound.playhead;
+                sound.playhead = nextPlayhead;
             }
-            sound.prevPlayhead = sound.playhead;
-            sound.playhead = nextPlayhead;
+            else {
+                var nextPlayhead = sound.playhead - sampleIncrement;
+                if (nextPlayhead < sound.end) {
+                    nextPlayhead = sound.end;
+                }
+                sound.prevPlayhead = sound.playhead;
+                sound.playhead = nextPlayhead;
+            }
+            
+            
         }
 
         // Remove all finished sounds

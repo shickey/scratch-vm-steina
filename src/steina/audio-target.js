@@ -15,7 +15,6 @@ class AudioTarget extends Target {
   constructor(runtime, id, audioInfo) {
     super(runtime, null);
 
-    // Overwrite the id to match the id in Core Data
     this.id = id;
 
     // Variables from RenderedTarget
@@ -27,6 +26,7 @@ class AudioTarget extends Target {
     this.markers = [];
     this.trimStart = 0;
     this.trimEnd = 0;
+    this.playbackRate = 100;
     this.nonblockingSoundsAvailable = AudioTarget.MAX_SIMULTANEOUS_NONBLOCKING_SOUNDS;
 
     if (!!audioInfo) {
@@ -35,11 +35,18 @@ class AudioTarget extends Target {
       this.markers = audioInfo.markers || [];
       this.trimStart = audioInfo.trimStart || 0;
       this.trimEnd = audioInfo.trimEnd || this.totalSamples;
+      this.playbackRate = audioInfo.playbackRate || 100;
     }
   }
 
   setVolume (vol) {
     this.volume = MathUtil.clamp(vol, 0, 500);
+  }
+
+  setRate (rate) {
+    // @TODO: Should we clamp this or is it fun to just go nuts with the rate?
+    this.playbackRate = MathUtil.clamp(rate, 0, 1000);
+    this.runtime.requestRedraw();
   }
 
   toJSON () {
@@ -57,7 +64,8 @@ class AudioTarget extends Target {
 
       markers: this.markers,
       trimStart: this.trimStart,
-      trimEnd: this.trimEnd
+      trimEnd: this.trimEnd,
+      playbackRate: this.playbackRate
     }
   }
 
@@ -75,6 +83,7 @@ class AudioTarget extends Target {
     newTarget.markers = JSON.parse(JSON.stringify(this.markers))
     newTarget.trimStart = this.trimStart;
     newTarget.trimEnd = this.trimEnd;
+    newTarget.playbackRate = this.playbackRate;
 
     // Copy blocks, vars, etc.
     newTarget.blocks = this.blocks.duplicate();
