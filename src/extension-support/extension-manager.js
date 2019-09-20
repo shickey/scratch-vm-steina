@@ -142,7 +142,8 @@ class ExtensionManager {
         this._loadedExtensions.forEach(serviceName => {
             dispatch.call(serviceName, 'getInfo')
                 .then(info => {
-                    dispatch.call('runtime', '_refreshExtensionPrimitives', info);
+                    var preparedInfo = this._prepareExtensionInfo(serviceName, info);
+                    dispatch.call('runtime', '_refreshExtensionPrimitives', preparedInfo);
                 })
                 .catch(e => {
                     log.error(`Failed to refresh buildtin extension primitives: ${JSON.stringify(e)}`);

@@ -100,7 +100,19 @@ class SteinaBlocks {
                         default: 'play from [MARKER_A] to [MARKER_B]',
                         description: 'plays the video at current playback rate from the first marker argument ' +
                                      'until the second marker argument'
-                    })
+                    }),
+                    arguments: {
+                        MARKER_A: {
+                            type: ArgumentType.STRING,
+                            menu: 'markers',
+                            defaultValue: 'start'
+                        },
+                        MARKER_B: {
+                            type: ArgumentType.STRING,
+                            menu: 'markers',
+                            defaultValue: 'end'
+                        }
+                    }
                 },
                 {
                     opcode: 'playForwardReverseUntilDone',
@@ -111,7 +123,14 @@ class SteinaBlocks {
                         description: 'plays the video at current playback rate from the current frame ' +
                                      'until reaching either the final frame (forward) or the first frame (reverse) ' +
                                      'while blocking the execution thread'
-                    })
+                    }),
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'directions',
+                            defaultValue: VideoDirections.FORWARD
+                        }
+                    }
                 },
                 {
                     opcode: 'startPlayingForwardReverse',
@@ -121,7 +140,14 @@ class SteinaBlocks {
                         default: 'start playing [DIRECTION]',
                         description: 'plays the video at current playback rate from the current frame ' +
                                      'until reaching either the final frame (forward) or the first frame (reverse)'
-                    })
+                    }),
+                    arguments: {
+                        DIRECTION: {
+                            type: ArgumentType.STRING,
+                            menu: 'directions',
+                            defaultValue: VideoDirections.FORWARD
+                        }
+                    }
                 },
                 {
                     opcode: 'startPlaying',
@@ -277,33 +303,57 @@ class SteinaBlocks {
                 },
                 {
                     opcode: 'whenPlayedToEnd',
-                    text: 'when played to end',
+                    text: formatMessage({
+                        id: 'steina.video.whenPlayedToEnd',
+                        default: 'when played to end',
+                        description: 'triggers when the video is playing and reaches the final frame'
+                    }),
                     blockType: BlockType.HAT
                 },
                 {
                     opcode: 'whenPlayedToBeginning',
-                    text: 'when played to beginning',
+                    text: formatMessage({
+                        id: 'steina.video.whenPlayedToBeginning',
+                        default: 'when played to beginning',
+                        description: 'triggers when the video is playing and reaches the first frame (for example, when playing in reverse)'
+                    }),
                     blockType: BlockType.HAT
                 },
                 {
                     opcode: 'whenTapped',
-                    text: 'when tapped',
+                    text: formatMessage({
+                        id: 'steina.video.whenTapped',
+                        default: 'when tapped',
+                        description: 'triggers when the video is tapped by the user'
+                    }),
                     blockType: BlockType.HAT
                 },
                 {
                     opcode: 'getCurrentFrame',
-                    text: 'current frame',
+                    text: formatMessage({
+                        id: 'steina.video.getCurrentFrame',
+                        default: 'current frame',
+                        description: 'reports the current frame of the video'
+                    }),
                     blockType: BlockType.REPORTER
                 },
                 {
                     opcode: 'getTotalFrames',
-                    text: 'total frames',
+                    text: formatMessage({
+                        id: 'steina.video.getTotalFrames',
+                        default: 'total frames',
+                        description: 'reports the length of the video in frames'
+                    }),
                     blockType: BlockType.REPORTER
                 },
 
                 {
                     opcode: 'isTapped',
-                    text: 'tapped?',
+                    text: formatMessage({
+                        id: 'steina.video.isTapped',
+                        default: 'tapped?',
+                        description: 'reports if the user is current touching the video or not'
+                    }),
                     blockType: BlockType.BOOLEAN
                 },
 
@@ -396,7 +446,11 @@ class SteinaBlocks {
                 },
                 {
                     opcode: 'getVolume',
-                    text: 'volume',
+                    text: formatMessage({
+                        id: 'steina.audio.getVolume',
+                        default: 'volume',
+                        description: 'reports the current volume of the audio clip'
+                    }),
                     blockType: BlockType.REPORTER
                 },
 
@@ -433,7 +487,11 @@ class SteinaBlocks {
                 },
                 {
                     opcode: 'getPlayRate',
-                    text: 'play rate',
+                    text: formatMessage({
+                        id: 'steina.audio.getPlayRate',
+                        default: 'play rate',
+                        description: 'reports the current play rate of the audio clip'
+                    }),
                     blockType: BlockType.REPORTER
                 },
 
@@ -665,19 +723,31 @@ class SteinaBlocks {
                         value: CardinalDirections.WEST
                     }
                 ],
-                // markers: this._buildMarkersMenu()
                 markers: '_buildMarkersMenu'
             }
         };
     }
 
     _buildMarkersMenu(targetId) {
+        if (!targetId) {
+            return [
+                {
+                    text: 'n/a',
+                    value: '0'
+                }
+            ]
+        }
+
         var target = this.runtime.getTargetById(targetId);
         if (target && target.hasOwnProperty('markers')) {
             var markers = target.markers;
             var menuItems = [
                 {
-                    text: 'start',
+                    text: formatMessage({
+                        id: 'steina.markersMenu.start',
+                        default: 'start',
+                        description: 'label for the start of the video or audio clip'
+                    }),
                     value: target.trimStart.toString()
                 }
             ];
@@ -691,7 +761,11 @@ class SteinaBlocks {
             }
 
             menuItems.push({
-                text: 'end',
+                text: formatMessage({
+                        id: 'steina.markersMenu.end',
+                        default: 'end',
+                        description: 'label for the end of the video or audio clip'
+                    }),
                 value: target.trimEnd.toString()
             });
 
